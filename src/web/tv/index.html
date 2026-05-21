@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cocotte Goal Happy Hour - TV</title>
+  <link rel="stylesheet" href="/tv/tv.css">
+</head>
+<body>
+  <div class="confetti-layer" id="confetti-layer" aria-hidden="true"></div>
+  <div class="goal-burst" id="goal-burst" aria-hidden="true">
+    <div class="burst-rays"></div>
+    <div class="burst-confetti" id="burst-confetti"></div>
+    <div class="burst-message">
+      <strong>BUUUUUT</strong>
+      <span>-20 % MAINTENANT</span>
+    </div>
+  </div>
+
+  <main class="tv-shell">
+    <section class="tv-score" aria-label="Score du match">
+      <span class="team-home" id="home-team">FRA</span>
+      <div class="score-value" aria-label="Score">
+        <strong id="home-score">0</strong>
+        <span class="score-separator">-</span>
+        <strong id="away-score">0</strong>
+      </div>
+      <span class="team-away" id="away-team">ADV</span>
+      <p id="match-full-name">France vs Unknown</p>
+    </section>
+
+    <section class="tv-main" aria-label="Animation happy hour">
+      <div class="tv-message">
+        <div class="inactive-message" id="inactive-message">
+          <p id="waiting-message">En attente du prochain but de la France</p>
+        </div>
+        <div class="active-message" id="active-message" hidden>
+          <p class="offer-line">sélect. de boissons à -20%</p>
+          <h1 id="active-title">BUUUUUT</h1>
+          <div class="tv-timer" id="timer">10:00</div>
+        </div>
+      </div>
+
+      <section class="drinks-board" aria-label="Carte des boissons">
+        <div class="drinks-heading">
+          <p class="board-kicker">Carte Cocotte</p>
+          <h2>Boissons</h2>
+          <p id="drinks-note">Prix habituels</p>
+        </div>
+        <div class="drink-list" id="drink-list"></div>
+      </section>
+    </section>
+  </main>
+
+  <script type="module" src="/tv/tv.js"></script>
+</body>
+</html>

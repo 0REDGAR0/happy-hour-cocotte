@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cocotte Goal Happy Hour - Setup</title>
+  <link rel="stylesheet" href="/bar/bar.css">
+</head>
+<body class="setup-page">
+  <main class="setup-shell">
+    <header class="setup-header">
+      <p class="eyebrow">Setup avant match</p>
+      <h1>Cocotte Goal Happy Hour</h1>
+    </header>
+
+    <form class="setup-card" id="setup-form">
+      <section aria-label="Mode de suivi">
+        <h2>Mode de suivi</h2>
+        <div class="choice-grid mode-grid">
+          <label class="choice-card">
+            <input type="radio" name="mode" value="simulation" checked>
+            <span>Match simule</span>
+            <small>Score controle depuis la console bar</small>
+          </label>
+          <label class="choice-card">
+            <input type="radio" name="mode" value="api-live">
+            <span>API live</span>
+            <small>Lecture API-Football sans declenchement automatique</small>
+          </label>
+        </div>
+        <p class="api-live-note" id="api-live-note">Choisissez un match France detecte par API-Football.</p>
+      </section>
+
+      <section class="api-matches-card" id="api-matches-section" aria-label="Matchs France API" hidden>
+        <div class="api-matches-header">
+          <div>
+            <h2>Matchs France API</h2>
+            <p id="api-matches-status">Chargement...</p>
+          </div>
+          <button class="api-refresh-button" id="api-refresh-button" type="button">Rafraichir</button>
+        </div>
+        <div class="api-match-list" id="api-match-list"></div>
+      </section>
+
+      <section aria-label="Match suivi">
+        <h2>Adversaire</h2>
+        <div class="choice-grid opponent-grid" id="opponent-grid"></div>
+        <label class="custom-opponent">
+          <span>Adversaire personnalise</span>
+          <input id="custom-away-team" name="customAwayTeam" type="text" maxlength="48" placeholder="Exemple : Argentine">
+          <small>Si ce champ est rempli, il remplace le choix rapide.</small>
+        </label>
+      </section>
+
+      <button class="setup-submit" type="submit">Demarrer le suivi du match</button>
+      <p class="setup-error" id="setup-error" role="alert"></p>
+    </form>
+  </main>
+
+  <script type="module" src="/bar/setup.js"></script>
+</body>
+</html>
