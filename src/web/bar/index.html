@@ -1,0 +1,67 @@
+﻿<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cocotte Goal Happy Hour - Bar</title>
+  <link rel="stylesheet" href="/bar/bar.css">
+</head>
+<body>
+  <main class="bar-shell">
+    <header class="bar-header">
+      <div>
+        <p class="eyebrow">Console administrateur</p>
+        <h1>Cocotte Goal Happy Hour</h1>
+      </div>
+      <nav class="header-actions" aria-label="Navigation admin">
+        <span class="source-badge" id="source-badge">MATCH SIMULE</span>
+        <a class="setup-link" href="/bar/setup">Retour setup</a>
+      </nav>
+    </header>
+
+    <section class="score-card" aria-label="Score du match">
+      <div class="team">
+        <span class="team-name" id="home-team">FRA</span>
+        <span class="team-score" id="home-score">0</span>
+      </div>
+      <div class="score-separator">-</div>
+      <div class="team team-away">
+        <span class="team-score" id="away-score">0</span>
+        <span class="team-name" id="away-team">ADV</span>
+      </div>
+      <p class="match-full-name" id="match-full-name">France vs Unknown</p>
+    </section>
+
+    <section class="status-card" aria-label="Etat happy hour">
+      <div class="status-topline">
+        <div class="status-row">
+          <span class="status-dot" id="status-dot"></span>
+          <span id="status-label">Happy hour inactive</span>
+        </div>
+        <span class="status-note">Override manuel</span>
+      </div>
+      <div class="timer" id="timer">10:00</div>
+    </section>
+
+    <section class="actions" aria-label="Commandes happy hour">
+      <button class="action-button start" id="start-button" type="button">Lancer</button>
+      <button class="action-button reset" id="reset-button" type="button">Reset 10:00</button>
+      <button class="action-button stop" id="stop-button" type="button">Stop</button>
+    </section>
+
+    <section class="simulation-card" aria-label="Simulation du score">
+      <div>
+        <p class="eyebrow">Simulation match</p>
+        <h2>Contrôle du score</h2>
+      </div>
+      <div class="simulation-actions">
+        <button class="simulation-button home-goal" id="home-goal-button" type="button">France +1</button>
+        <button class="simulation-button away-goal" id="away-goal-button" type="button">Adversaire +1</button>
+        <button class="simulation-button reset-score" id="reset-score-button" type="button">Reset score</button>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="/bar/bar.js"></script>
+</body>
+</html>
