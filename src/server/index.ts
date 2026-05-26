@@ -19,6 +19,10 @@ type MatchOption = {
 type PublicState = {
   happyHourActive: boolean;
   remainingSeconds: number;
+  scoreLockActive: boolean;
+  scoreLockRemainingSeconds: number;
+  canUndoLastAction: boolean;
+  lastActionLabel: string | null;
   selectedMatchId: string;
   matchStarted: boolean;
   matchMode: MatchMode;
@@ -41,12 +45,30 @@ type SelectApiMatchBody = {
   matchId?: string;
 };
 
+type ScoreActionType = 'home-goal' | 'away-goal';
+
+type LastScoreAction = {
+  type: ScoreActionType;
+  team: MatchTeam;
+  previousScore: {
+    home: number;
+    away: number;
+  };
+  newScore: {
+    home: number;
+    away: number;
+  };
+  triggeredHappyHour: boolean;
+  timestamp: number;
+};
+
 const app = Fastify({
   logger: true,
 });
 
 const webRoot = resolve(process.cwd(), 'src/web');
 const barRoot = resolve(webRoot, 'bar');
+const salleRoot = resolve(webRoot, 'salle');
 const tvRoot = resolve(webRoot, 'tv');
 
 const franceTeam = createTeam('France');
@@ -64,6 +86,10 @@ let cachedFranceApiMatches: FranceMatchCandidate[] = [];
 const state: PublicState = {
   happyHourActive: false,
   remainingSeconds: 0,
+  scoreLockActive: false,
+  scoreLockRemainingSeconds: 0,
+  canUndoLastAction: false,
+  lastActionLabel: null,
   selectedMatchId: 'france-unknown',
   matchStarted: false,
   matchMode: 'simulation',
@@ -78,13 +104,39 @@ const state: PublicState = {
 
 const sockets = new Set<WebSocket>();
 const websocketServer = new WebSocketServer({ noServer: true });
+const scoreLockDurationSeconds = 30;
+let scoreLockUntil = 0;
+let lastScoreAction: LastScoreAction | null = null;
 
 app.addContentTypeParser('application/x-www-form-urlencoded', { parseAs: 'string' }, (_request, _body, done) => {
   done(null, {});
 });
 
+function getScoreLockRemainingSeconds(): number {
+  return Math.max(0, Math.ceil((scoreLockUntil - Date.now()) / 1000));
+}
+
+function getLastActionLabel(action: LastScoreAction | null): string | null {
+  if (!action) {
+    return null;
+  }
+
+  return action.type === 'home-goal'
+    ? `But ${action.team.name}`
+    : `But ${action.team.name}`;
+}
+
 function getState(): PublicState {
-  return { ...state };
+  const scoreLockRemainingSeconds = getScoreLockRemainingSeconds();
+  const scoreLockActive = scoreLockRemainingSeconds > 0;
+
+  return {
+    ...state,
+    scoreLockActive,
+    scoreLockRemainingSeconds,
+    canUndoLastAction: scoreLockActive && lastScoreAction !== null,
+    lastActionLabel: scoreLockActive ? getLastActionLabel(lastScoreAction) : null,
+  };
 }
 
 function sendState(socket: WebSocket): void {
@@ -149,6 +201,8 @@ function selectMatch(matchId: string, mode: MatchMode, customAwayTeam = ''): Pub
   state.awayScore = 0;
   state.happyHourActive = false;
   state.remainingSeconds = 0;
+  scoreLockUntil = 0;
+  lastScoreAction = null;
   broadcastState();
   return getState();
 }
@@ -166,6 +220,8 @@ function applyApiMatchSelection(match: FranceMatchCandidate): PublicState {
   state.awayScore = match.awayScore;
   state.happyHourActive = false;
   state.remainingSeconds = 0;
+  scoreLockUntil = 0;
+  lastScoreAction = null;
   broadcastState();
   return getState();
 }
@@ -189,7 +245,21 @@ async function selectApiMatch(matchId: string): Promise<PublicState> {
   return applyApiMatchSelection(match);
 }
 
+function startScoreLock(): void {
+  scoreLockUntil = Date.now() + scoreLockDurationSeconds * 1000;
+}
+
+function scoreLockedError() {
+  return {
+    ok: false,
+    error: 'score_locked',
+    lockRemainingSeconds: getScoreLockRemainingSeconds(),
+  };
+}
+
 function addHomeGoal(): PublicState {
+  const previousHomeScore = state.homeScore;
+  const previousAwayScore = state.awayScore;
   state.homeScore += 1;
 
   if (state.happyHourActive) {
@@ -199,12 +269,44 @@ function addHomeGoal(): PublicState {
     state.remainingSeconds = config.happyHourDurationSeconds;
   }
 
+  lastScoreAction = {
+    type: 'home-goal',
+    team: state.homeTeam,
+    previousScore: {
+      home: previousHomeScore,
+      away: previousAwayScore,
+    },
+    newScore: {
+      home: state.homeScore,
+      away: state.awayScore,
+    },
+    triggeredHappyHour: true,
+    timestamp: Date.now(),
+  };
+  startScoreLock();
   broadcastState();
   return getState();
 }
 
 function addAwayGoal(): PublicState {
+  const previousHomeScore = state.homeScore;
+  const previousAwayScore = state.awayScore;
   state.awayScore += 1;
+  lastScoreAction = {
+    type: 'away-goal',
+    team: state.awayTeam,
+    previousScore: {
+      home: previousHomeScore,
+      away: previousAwayScore,
+    },
+    newScore: {
+      home: state.homeScore,
+      away: state.awayScore,
+    },
+    triggeredHappyHour: false,
+    timestamp: Date.now(),
+  };
+  startScoreLock();
   broadcastState();
   return getState();
 }
@@ -212,6 +314,30 @@ function addAwayGoal(): PublicState {
 function resetScore(): PublicState {
   state.homeScore = 0;
   state.awayScore = 0;
+  scoreLockUntil = 0;
+  lastScoreAction = null;
+  broadcastState();
+  return getState();
+}
+
+function undoLastScoreAction(): PublicState {
+  if (!lastScoreAction || getScoreLockRemainingSeconds() === 0) {
+    throw new Error('No score action to undo');
+  }
+
+  if (lastScoreAction.type === 'home-goal') {
+    state.homeScore = Math.max(0, lastScoreAction.previousScore.home);
+
+    if (lastScoreAction.triggeredHappyHour) {
+      state.happyHourActive = false;
+      state.remainingSeconds = 0;
+    }
+  } else {
+    state.awayScore = Math.max(0, lastScoreAction.previousScore.away);
+  }
+
+  lastScoreAction = null;
+  scoreLockUntil = 0;
   broadcastState();
   return getState();
 }
@@ -221,12 +347,18 @@ function readHtml(root: string): Promise<string> {
 }
 
 setInterval(() => {
+  const wasScoreLocked = getScoreLockRemainingSeconds() > 0;
+
   if (state.happyHourActive) {
     state.remainingSeconds = Math.max(0, state.remainingSeconds - 1);
 
     if (state.remainingSeconds === 0) {
       state.happyHourActive = false;
     }
+  }
+
+  if (wasScoreLocked && getScoreLockRemainingSeconds() === 0) {
+    lastScoreAction = null;
   }
 
   broadcastState();
@@ -357,16 +489,35 @@ app.post('/api/override/stop', async () => {
   return getState();
 });
 
-app.post('/api/simulation/home-goal', async () => {
+app.post('/api/simulation/home-goal', async (_request, reply) => {
+  if (getScoreLockRemainingSeconds() > 0) {
+    return reply.code(409).send(scoreLockedError());
+  }
+
   return addHomeGoal();
 });
 
-app.post('/api/simulation/away-goal', async () => {
+app.post('/api/simulation/away-goal', async (_request, reply) => {
+  if (getScoreLockRemainingSeconds() > 0) {
+    return reply.code(409).send(scoreLockedError());
+  }
+
   return addAwayGoal();
 });
 
 app.post('/api/simulation/reset-score', async () => {
   return resetScore();
+});
+
+app.post('/api/simulation/undo-last', async (_request, reply) => {
+  try {
+    return undoLastScoreAction();
+  } catch {
+    return reply.code(409).send({
+      ok: false,
+      error: 'no_undo_available',
+    });
+  }
 });
 
 app.get('/bar', async (_request, reply) => {
@@ -392,6 +543,26 @@ app.get('/bar/setup.js', async (_request, reply) => {
 app.get('/bar/bar.js', async (_request, reply) => {
   const script = await readFile(resolve(barRoot, 'bar.ts'), 'utf8');
   return reply.type('application/javascript; charset=utf-8').send(script);
+});
+
+app.get('/salle', async (_request, reply) => {
+  const html = await readHtml(salleRoot);
+  return reply.type('text/html; charset=utf-8').send(html);
+});
+
+app.get('/salle/', async (_request, reply) => {
+  const html = await readHtml(salleRoot);
+  return reply.type('text/html; charset=utf-8').send(html);
+});
+
+app.get('/salle/salle.js', async (_request, reply) => {
+  const script = await readFile(resolve(salleRoot, 'salle.ts'), 'utf8');
+  return reply.type('application/javascript; charset=utf-8').send(script);
+});
+
+app.get('/salle/salle.css', async (_request, reply) => {
+  const style = await readFile(resolve(salleRoot, 'salle.css'), 'utf8');
+  return reply.type('text/css; charset=utf-8').send(style);
 });
 
 app.get('/tv', async (_request, reply) => {
