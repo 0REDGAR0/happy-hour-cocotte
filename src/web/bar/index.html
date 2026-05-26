@@ -15,9 +15,14 @@
       </div>
       <nav class="header-actions" aria-label="Navigation admin">
         <span class="source-badge" id="source-badge">MATCH SIMULE</span>
+        <button class="audio-toggle" id="audio-toggle-button" type="button">Activer les alertes sonores</button>
         <a class="setup-link" href="/bar/setup">Retour setup</a>
       </nav>
     </header>
+
+    <div class="audio-alert-banner" id="audio-alert-banner" aria-live="polite" hidden>
+      Happy hour démarrée
+    </div>
 
     <section class="score-card" aria-label="Score du match">
       <div class="team">
@@ -57,7 +62,12 @@
       <div class="simulation-actions">
         <button class="simulation-button home-goal" id="home-goal-button" type="button">France +1</button>
         <button class="simulation-button away-goal" id="away-goal-button" type="button">Adversaire +1</button>
+        <button class="simulation-button undo-last" id="undo-last-button" type="button">Annuler dernière action</button>
         <button class="simulation-button reset-score" id="reset-score-button" type="button">Reset score</button>
+      </div>
+      <div class="score-lock-panel" aria-live="polite">
+        <p id="score-lock-notice">Score modifiable</p>
+        <p id="undo-status">Aucune action annulable</p>
       </div>
     </section>
   </main>
