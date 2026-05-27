@@ -29,7 +29,7 @@ const waitingMessageMinDelayMs = 20000;
 const waitingMessageMaxDelayMs = 30000;
 const waitingMessageTransitionMs = 420;
 const waitingMessages = [
-  'En attente du prochain but de la France',
+  'En attente du prochain declenchement',
   'Un but fran\u00e7ais peut lancer la f\u00eate \u00e0 tout moment',
   "Restez pr\u00eats, la happy hour peut tomber d'un instant \u00e0 l'autre",
   'Prochain but des Bleus : -20 % sur les boissons s\u00e9lectionn\u00e9es',
@@ -75,7 +75,7 @@ function formatSeconds(totalSeconds = 0) {
 }
 
 function formatPrice(price = 0) {
-  return `${price.toFixed(2)} €`;
+  return `${price.toFixed(2)} \u20ac`;
 }
 
 function createDrinkCard(drink) {
@@ -227,7 +227,7 @@ function renderState(state = emptyState) {
   activeMessage.toggleAttribute('hidden', !state.happyHourActive);
   inactiveMessage.toggleAttribute('hidden', state.happyHourActive);
   drinksNote.textContent = state.happyHourActive
-    ? '-20 % applique pendant le chrono'
+    ? '-20 % appliqu\u00e9s pendant le chrono'
     : 'Prix habituels';
 
   if (state.happyHourActive) {

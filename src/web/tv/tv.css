@@ -1,7 +1,8 @@
 :root {
   color-scheme: light;
   --warm-bg: #f8f3ea;
-  --surface: rgba(255, 252, 247, 0.94);
+  --surface: #fffaf4;
+  --surface-strong: #fffdf9;
   --text: #2f241b;
   --muted: #6d5b4b;
   --bar-accent: #af593f;
@@ -9,7 +10,8 @@
   --warning: #e0b24b;
   --mocha: #5c3a21;
   --line: rgba(92, 58, 33, 0.18);
-  --shadow: 0 16px 42px rgba(92, 58, 33, 0.16);
+  --line-strong: rgba(175, 89, 63, 0.34);
+  --shadow: 0 22px 60px rgba(92, 58, 33, 0.14);
 }
 
 * {
@@ -19,16 +21,17 @@
 html,
 body {
   width: 100%;
-  height: 100%;
+  min-height: 100%;
 }
 
 body {
   margin: 0;
+  min-height: 100svh;
   overflow: hidden;
   background:
-    radial-gradient(circle at 50% 8%, rgba(224, 178, 75, 0.22), transparent 16rem),
-    radial-gradient(circle at 88% 32%, rgba(175, 89, 63, 0.16), transparent 15rem),
-    linear-gradient(180deg, var(--warm-bg), #fffaf4);
+    linear-gradient(135deg, rgba(224, 178, 75, 0.14), transparent 34%),
+    linear-gradient(315deg, rgba(175, 89, 63, 0.12), transparent 36%),
+    var(--warm-bg);
   color: var(--text);
   font-family: Arial, Helvetica, sans-serif;
 }
@@ -36,13 +39,14 @@ body {
 .tv-shell {
   position: relative;
   z-index: 1;
-  width: min(100vw, 540px);
-  height: 100vh;
+  width: min(100%, 1440px);
+  height: 100svh;
+  min-height: 100svh;
   margin: 0 auto;
-  padding: clamp(10px, 2vh, 22px);
+  padding: clamp(14px, 2.8vw, 38px);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  gap: clamp(8px, 1.3vh, 14px);
+  gap: clamp(12px, 2vw, 24px);
 }
 
 .tv-score,
@@ -50,73 +54,76 @@ body {
 .drinks-board {
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: var(--surface);
+  background: rgba(255, 250, 244, 0.94);
   box-shadow: var(--shadow);
 }
 
 .tv-score {
-  min-height: 0;
-  padding: clamp(8px, 1.3vh, 14px);
+  padding: clamp(10px, 1.4vw, 18px);
+  display: grid;
+  gap: clamp(6px, 0.9vw, 12px);
+}
+
+.score-label,
+.state-kicker,
+.board-kicker,
+.offer-line,
+.service-banner,
+.drinks-heading #drinks-note {
+  margin: 0;
+  font-weight: 900;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.score-label {
+  color: var(--bar-accent);
+  font-size: clamp(12px, 1.5vw, 18px);
+}
+
+.score-row {
+  min-width: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  column-gap: clamp(8px, 2vw, 16px);
-  row-gap: clamp(2px, 0.4vh, 6px);
-}
-
-.tv-score p {
-  grid-column: 1 / -1;
-  margin: clamp(2px, 0.4vh, 6px) 0 0;
-  overflow: hidden;
-  color: var(--muted);
-  font-size: clamp(13px, 3.1vw, 22px);
-  line-height: 1.05;
-  font-weight: 900;
-  text-align: center;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  column-gap: clamp(10px, 2.2vw, 32px);
 }
 
 .team-home,
 .team-away {
   display: block;
   min-width: 0;
-  width: 100%;
   overflow: hidden;
   color: var(--muted);
-  font-size: clamp(24px, 7.2vw, 44px);
-  line-height: 0.95;
+  font-size: clamp(28px, 4.3vw, 60px);
+  line-height: 0.92;
   font-weight: 900;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .team-home {
-  justify-self: start;
   text-align: left;
 }
 
 .team-away {
-  justify-self: end;
   text-align: right;
 }
 
 .score-value {
-  justify-self: center;
   display: flex;
   align-items: baseline;
   justify-content: center;
-  gap: clamp(4px, 1vw, 8px);
+  gap: clamp(6px, 1.1vw, 14px);
+  color: var(--mocha);
   text-align: center;
   white-space: nowrap;
 }
 
 .score-value strong,
 .score-value .score-separator {
-  justify-self: center;
-  color: var(--mocha);
-  font-size: clamp(38px, 11vw, 68px);
-  line-height: 0.86;
+  font-size: clamp(48px, 6.8vw, 92px);
+  line-height: 0.84;
   font-weight: 900;
   font-variant-numeric: tabular-nums;
 }
@@ -125,143 +132,189 @@ body {
   color: var(--bar-accent);
 }
 
+.tv-score p {
+  margin: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: clamp(15px, 2vw, 26px);
+  line-height: 1.1;
+  font-weight: 900;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .tv-main {
   min-height: 0;
   display: grid;
-  grid-template-rows: minmax(112px, 0.78fr) minmax(0, 1.22fr);
-  gap: clamp(8px, 1.3vh, 14px);
+  grid-template-columns: minmax(320px, 0.95fr) minmax(380px, 1.05fr);
+  gap: clamp(12px, 2vw, 24px);
 }
 
 .tv-message {
+  min-width: 0;
   min-height: 0;
-  padding: clamp(10px, 2vh, 22px);
+  padding: clamp(14px, 1.8vw, 24px);
   display: grid;
-  place-items: center;
+  grid-template-rows: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: clamp(10px, 1.5vw, 20px);
   overflow: hidden;
-  text-align: center;
   background:
-    linear-gradient(180deg, rgba(255, 252, 247, 0.98), rgba(255, 250, 244, 0.86)),
+    linear-gradient(180deg, rgba(255, 253, 249, 0.98), rgba(255, 250, 244, 0.92)),
     var(--surface);
+  text-align: center;
 }
 
-.inactive-message {
-  width: min(100%, 440px);
+.inactive-message,
+.active-message {
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  gap: clamp(8px, 1.2vw, 16px);
 }
 
-.inactive-message p {
+.state-kicker {
+  width: fit-content;
+  border: 1px solid rgba(224, 178, 75, 0.46);
+  border-radius: 8px;
+  padding: clamp(8px, 1vw, 12px) clamp(12px, 1.8vw, 18px);
+  background: rgba(224, 178, 75, 0.14);
+  color: var(--mocha);
+  font-size: clamp(13px, 1.6vw, 20px);
+}
+
+h1 {
+  max-width: 100%;
+  margin: 0;
+  color: var(--mocha);
+  font-size: clamp(38px, 4.9vw, 72px);
+  line-height: 0.94;
+  font-weight: 900;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.inactive-message #waiting-message {
+  max-width: min(100%, 18em);
   margin: 0;
   color: var(--muted);
-  font-size: clamp(18px, 5.3vw, 31px);
-  line-height: 1.12;
+  font-size: clamp(26px, 3.4vw, 48px);
+  line-height: 1.08;
   font-weight: 900;
   overflow-wrap: break-word;
   text-wrap: balance;
   transition: opacity 420ms ease, transform 420ms ease;
 }
 
-.inactive-message p.is-changing {
+.inactive-message #waiting-message.is-changing {
   opacity: 0;
   transform: translateY(8px);
 }
 
-.active-message {
-  min-width: 0;
-  display: grid;
-  place-items: center;
-  gap: clamp(6px, 1.2vh, 12px);
-}
-
 .offer-line {
-  margin: 0;
-  border: 2px solid rgba(175, 89, 63, 0.28);
+  border: 2px solid rgba(175, 89, 63, 0.34);
   border-radius: 8px;
-  padding: clamp(6px, 1vh, 10px) clamp(8px, 2vw, 14px);
+  padding: clamp(10px, 1.2vw, 16px) clamp(14px, 2vw, 22px);
   background: rgba(224, 178, 75, 0.18);
   color: var(--bar-accent);
-  font-size: clamp(15px, 4.4vw, 26px);
-  line-height: 1.02;
-  font-weight: 900;
-  text-transform: uppercase;
+  font-size: clamp(16px, 2.2vw, 30px);
+  text-wrap: balance;
 }
 
-h1 {
-  max-width: 100%;
-  margin: 0;
-  color: var(--success);
-  font-size: clamp(34px, 10vw, 58px);
-  line-height: 0.9;
-  font-weight: 900;
-  text-transform: uppercase;
+.active-message h1 {
+  color: var(--bar-accent);
+  font-size: clamp(40px, 4.6vw, 64px);
 }
 
 .tv-timer {
   color: var(--mocha);
-  font-size: clamp(70px, 19vw, 112px);
-  line-height: 0.8;
+  font-size: clamp(74px, 8.4vw, 118px);
+  line-height: 0.78;
   font-weight: 900;
   font-variant-numeric: tabular-nums;
 }
 
+.service-banner {
+  width: 100%;
+  border: 2px solid var(--line-strong);
+  border-radius: 8px;
+  padding: clamp(12px, 1.7vw, 20px);
+  background: rgba(255, 253, 249, 0.92);
+  color: var(--bar-accent);
+  font-size: clamp(17px, 2.3vw, 34px);
+  line-height: 1.05;
+  text-wrap: balance;
+}
+
 .drinks-board {
+  min-width: 0;
   min-height: 0;
-  padding: clamp(10px, 1.8vh, 18px);
+  padding: clamp(14px, 2vw, 28px);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  gap: clamp(7px, 1.1vh, 12px);
+  gap: clamp(14px, 1.8vw, 24px);
   background:
-    linear-gradient(180deg, rgba(255, 252, 247, 0.98), rgba(255, 250, 244, 0.9)),
+    linear-gradient(180deg, rgba(255, 253, 249, 0.98), rgba(255, 250, 244, 0.94)),
     var(--surface);
 }
 
 .drinks-heading {
   min-width: 0;
-  display: grid;
-  gap: 2px;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: clamp(10px, 1.6vw, 24px);
 }
 
-.board-kicker,
-.drinks-heading p {
-  margin: 0;
-  overflow: hidden;
+.drinks-heading > div {
+  min-width: 0;
+}
+
+.board-kicker {
   color: var(--bar-accent);
-  font-size: clamp(12px, 3.3vw, 18px);
-  line-height: 1;
-  font-weight: 900;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-  white-space: nowrap;
+  font-size: clamp(12px, 1.5vw, 18px);
 }
 
 .drinks-heading h2 {
-  margin: 0;
+  margin: 4px 0 0;
   color: var(--mocha);
-  font-size: clamp(30px, 8.4vw, 50px);
-  line-height: 0.95;
+  font-size: clamp(36px, 4.2vw, 62px);
+  line-height: 0.94;
   font-weight: 900;
 }
 
 .drinks-heading #drinks-note {
+  flex: 0 0 auto;
+  max-width: 15em;
+  border: 1px solid rgba(92, 58, 33, 0.14);
+  border-radius: 8px;
+  padding: clamp(9px, 1.1vw, 13px) clamp(11px, 1.4vw, 16px);
   color: var(--muted);
-  font-size: clamp(13px, 3.3vw, 19px);
+  background: rgba(255, 255, 255, 0.5);
+  font-size: clamp(12px, 1.45vw, 18px);
+  text-align: right;
+  text-wrap: balance;
 }
 
 .drink-list {
   min-height: 0;
   display: grid;
   grid-template-rows: repeat(5, minmax(0, 1fr));
-  gap: clamp(5px, 0.8vh, 9px);
+  gap: clamp(8px, 1.1vw, 14px);
 }
 
 .drink-item {
+  min-width: 0;
   min-height: 0;
   border: 1px solid rgba(92, 58, 33, 0.12);
   border-radius: 8px;
-  padding: clamp(6px, 1vh, 10px) clamp(8px, 1.8vw, 12px);
+  padding: clamp(8px, 1.1vw, 14px) clamp(11px, 1.5vw, 18px);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: clamp(8px, 1.8vw, 14px);
-  background: rgba(255, 255, 255, 0.42);
+  gap: clamp(10px, 1.5vw, 20px);
+  background: rgba(255, 255, 255, 0.46);
 }
 
 .drink-item h3 {
@@ -270,8 +323,8 @@ h1 {
   margin: 0;
   overflow: hidden;
   color: var(--text);
-  font-size: clamp(17px, 4.9vw, 29px);
-  line-height: 0.96;
+  font-size: clamp(20px, 2.3vw, 32px);
+  line-height: 1;
   font-weight: 900;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -282,8 +335,8 @@ h1 {
   min-width: fit-content;
   display: flex;
   align-items: baseline;
-  justify-content: flex-start;
-  gap: clamp(6px, 1.1vw, 10px);
+  justify-content: flex-end;
+  gap: clamp(7px, 1vw, 12px);
   margin-left: auto;
   text-align: right;
   white-space: nowrap;
@@ -291,7 +344,7 @@ h1 {
 
 .normal-price {
   color: var(--mocha);
-  font-size: clamp(20px, 5.7vw, 34px);
+  font-size: clamp(24px, 2.6vw, 36px);
   line-height: 0.94;
   font-weight: 900;
   font-variant-numeric: tabular-nums;
@@ -304,10 +357,13 @@ h1 {
 
 .happy-hour-active {
   background:
-    radial-gradient(circle at 50% 20%, rgba(94, 143, 99, 0.3), transparent 15rem),
-    radial-gradient(circle at 16% 8%, rgba(224, 178, 75, 0.28), transparent 13rem),
-    radial-gradient(circle at 86% 18%, rgba(175, 89, 63, 0.2), transparent 14rem),
-    linear-gradient(180deg, var(--warm-bg), #fffaf4);
+    linear-gradient(135deg, rgba(94, 143, 99, 0.17), transparent 33%),
+    linear-gradient(315deg, rgba(175, 89, 63, 0.16), transparent 36%),
+    var(--warm-bg);
+}
+
+.happy-hour-active .tv-score {
+  border-color: rgba(94, 143, 99, 0.42);
 }
 
 .happy-hour-active .tv-message {
@@ -315,29 +371,40 @@ h1 {
   animation: activePulse 1.8s ease-in-out infinite;
 }
 
+.happy-hour-active .service-banner {
+  border-color: rgba(255, 250, 244, 0.74);
+  background: var(--bar-accent);
+  color: #fffaf4;
+  box-shadow: 0 16px 36px rgba(175, 89, 63, 0.26);
+  padding: clamp(10px, 1.3vw, 15px);
+  font-size: clamp(21px, 2.3vw, 32px);
+}
+
 .happy-hour-active .drinks-board {
   border-color: rgba(175, 89, 63, 0.4);
 }
 
+.happy-hour-active .drinks-heading #drinks-note {
+  border-color: rgba(175, 89, 63, 0.28);
+  background: rgba(175, 89, 63, 0.1);
+  color: var(--bar-accent);
+}
+
 .happy-hour-active .drink-item {
-  background: rgba(255, 252, 247, 0.84);
+  background: rgba(255, 253, 249, 0.84);
 }
 
 .happy-hour-active .normal-price {
-  color: rgba(109, 91, 75, 0.62);
-  font-size: clamp(14px, 3.8vw, 22px);
+  color: rgba(109, 91, 75, 0.58);
+  font-size: clamp(16px, 1.9vw, 24px);
   text-decoration: line-through;
   text-decoration-thickness: 0.16em;
-}
-
-.happy-hour-active .price-arrow {
-  display: none;
 }
 
 .happy-hour-active .discount-price {
   display: inline;
   color: var(--bar-accent);
-  font-size: clamp(22px, 6vw, 36px);
+  font-size: clamp(27px, 3vw, 42px);
   line-height: 0.92;
   font-weight: 900;
   font-variant-numeric: tabular-nums;
@@ -360,8 +427,8 @@ h1 {
   position: absolute;
   top: -8vh;
   left: var(--x);
-  width: clamp(5px, 1.4vw, 10px);
-  height: clamp(8px, 2vw, 16px);
+  width: clamp(5px, 0.8vw, 10px);
+  height: clamp(8px, 1.2vw, 16px);
   border-radius: 2px;
   background: var(--confetti-color);
   opacity: 0;
@@ -369,8 +436,8 @@ h1 {
 }
 
 .confetti:nth-child(3n) {
-  width: clamp(8px, 2vw, 14px);
-  height: clamp(4px, 1vw, 7px);
+  width: clamp(8px, 1.1vw, 14px);
+  height: clamp(4px, 0.6vw, 7px);
 }
 
 .confetti:nth-child(4n) {
@@ -386,7 +453,7 @@ h1 {
   overflow: hidden;
   pointer-events: none;
   background:
-    radial-gradient(circle at center, rgba(224, 178, 75, 0.98), rgba(175, 89, 63, 0.92) 48%, rgba(92, 58, 33, 0.9));
+    linear-gradient(135deg, rgba(224, 178, 75, 0.98), rgba(175, 89, 63, 0.94) 54%, rgba(92, 58, 33, 0.9));
   opacity: 0;
 }
 
@@ -413,12 +480,15 @@ h1 {
 .burst-message {
   position: relative;
   z-index: 2;
-  width: min(88vw, 460px);
+  width: min(88vw, 680px);
+  max-height: min(78vh, 520px);
   border: 3px solid rgba(255, 250, 244, 0.82);
   border-radius: 8px;
-  padding: clamp(18px, 5vh, 38px) clamp(14px, 5vw, 30px);
+  padding: clamp(18px, 4vh, 42px) clamp(16px, 4vw, 36px);
   display: grid;
-  gap: clamp(10px, 2.4vh, 18px);
+  align-content: center;
+  gap: clamp(10px, 2vh, 18px);
+  overflow: hidden;
   background: rgba(255, 252, 247, 0.94);
   box-shadow: 0 24px 90px rgba(47, 36, 27, 0.38);
   text-align: center;
@@ -429,31 +499,29 @@ h1 {
   animation: burstMessage 4.2s cubic-bezier(0.18, 0.9, 0.22, 1) forwards;
 }
 
-.burst-message p,
 .burst-message strong,
 .burst-message span {
+  min-width: 0;
   margin: 0;
-  line-height: 0.92;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  line-height: 0.96;
   font-weight: 900;
   text-transform: uppercase;
-}
-
-.burst-message p {
-  color: var(--mocha);
-  font-size: clamp(28px, 8vw, 52px);
+  text-wrap: balance;
 }
 
 .burst-message strong {
   color: var(--bar-accent);
-  font-size: clamp(38px, 11vw, 72px);
+  font-size: clamp(42px, 9vw, 98px);
 }
 
 .burst-message span {
   border-radius: 8px;
-  padding: clamp(8px, 1.6vh, 14px);
+  padding: clamp(10px, 1.6vh, 16px);
   background: rgba(224, 178, 75, 0.24);
   color: var(--mocha);
-  font-size: clamp(26px, 7.5vw, 48px);
+  font-size: clamp(24px, 5vw, 52px);
 }
 
 .burst-confetti {
@@ -467,16 +535,16 @@ h1 {
   position: absolute;
   top: 52%;
   left: 50%;
-  width: clamp(7px, 2vw, 13px);
-  height: clamp(12px, 3vw, 22px);
+  width: clamp(7px, 1.4vw, 13px);
+  height: clamp(12px, 2.2vw, 22px);
   border-radius: 2px;
   background: var(--confetti-color);
   opacity: 0;
 }
 
 .burst-piece:nth-child(3n) {
-  width: clamp(12px, 3vw, 22px);
-  height: clamp(6px, 1.6vw, 11px);
+  width: clamp(12px, 2vw, 22px);
+  height: clamp(6px, 1vw, 11px);
 }
 
 .burst-piece:nth-child(4n) {
@@ -494,13 +562,13 @@ h1 {
 @keyframes activePulse {
   0%,
   100% {
-    box-shadow: 0 16px 44px rgba(94, 143, 99, 0.18);
+    box-shadow: 0 20px 58px rgba(94, 143, 99, 0.18);
     transform: scale(1);
   }
 
   50% {
-    box-shadow: 0 16px 54px rgba(94, 143, 99, 0.32);
-    transform: scale(1.008);
+    box-shadow: 0 22px 68px rgba(94, 143, 99, 0.32);
+    transform: scale(1.006);
   }
 }
 
@@ -600,28 +668,135 @@ h1 {
   }
 }
 
-@media (max-height: 720px) {
+@media (min-width: 1180px) {
+  .drink-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 980px), (orientation: portrait) {
+  body {
+    overflow: auto;
+  }
+
   .tv-shell {
-    padding: 8px;
-    gap: 7px;
+    height: auto;
+    min-height: 100svh;
+    grid-template-rows: auto auto;
   }
 
   .tv-main {
-    grid-template-rows: minmax(92px, 0.68fr) minmax(0, 1.32fr);
-    gap: 7px;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+  }
+
+  .tv-message,
+  .drinks-board {
+    min-height: auto;
+  }
+
+  .drink-list {
+    grid-template-rows: none;
+    grid-auto-rows: minmax(72px, auto);
+  }
+}
+
+@media (max-width: 680px) {
+  .tv-shell {
+    padding: 10px;
+    gap: 10px;
   }
 
   .tv-score,
   .tv-message,
   .drinks-board {
-    box-shadow: 0 10px 28px rgba(92, 58, 33, 0.14);
+    box-shadow: 0 12px 30px rgba(92, 58, 33, 0.12);
   }
 
+  .score-row {
+    column-gap: 8px;
+  }
+
+  .team-home,
+  .team-away {
+    font-size: clamp(24px, 9vw, 40px);
+  }
+
+  .score-value strong,
+  .score-value .score-separator {
+    font-size: clamp(44px, 15vw, 72px);
+  }
+
+  .tv-score p {
+    font-size: 15px;
+  }
+
+  .tv-message,
   .drinks-board {
-    padding: 8px;
+    padding: 14px;
+  }
+
+  .drinks-heading {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .drinks-heading #drinks-note {
+    width: 100%;
+    max-width: none;
+    text-align: left;
+  }
+
+  .drink-item {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .drink-item h3 {
+    width: 100%;
+    white-space: normal;
+  }
+
+  .drink-prices {
+    width: 100%;
+    justify-content: space-between;
+    margin-left: 0;
+  }
+}
+
+@media (max-height: 740px) and (min-width: 981px) {
+  .tv-shell {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .tv-score,
+  .tv-message,
+  .drinks-board {
+    box-shadow: 0 12px 32px rgba(92, 58, 33, 0.12);
+  }
+
+  .tv-score,
+  .tv-message,
+  .drinks-board {
+    padding: 12px;
+  }
+
+  .inactive-message,
+  .active-message {
+    gap: 8px;
+  }
+
+  .service-banner {
+    padding: 10px;
   }
 
   .drink-list {
-    gap: 5px;
+    gap: 7px;
+  }
+
+  .drink-item {
+    padding: 8px 12px;
   }
 }
