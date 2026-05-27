@@ -39,6 +39,7 @@ type SelectMatchBody = {
   matchId?: string;
   mode?: MatchMode;
   customAwayTeam?: string;
+  customAwayShortName?: string;
 };
 
 type SelectApiMatchBody = {
@@ -178,12 +179,41 @@ function cleanOpponentName(value: unknown): string {
   return value.trim().replace(/\s+/g, ' ').slice(0, 48);
 }
 
-function selectMatch(matchId: string, mode: MatchMode, customAwayTeam = ''): PublicState {
+function cleanOpponentShortName(value: unknown): string {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  return value.replace(/\s+/g, '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4);
+}
+
+function withCustomShortName(team: MatchTeam, shortName = ''): MatchTeam {
+  const cleanShortName = cleanOpponentShortName(shortName);
+
+  if (!cleanShortName) {
+    return team;
+  }
+
+  return {
+    ...team,
+    shortName: cleanShortName,
+  };
+}
+
+function selectMatch(matchId: string, mode: MatchMode, customAwayTeam = '', customAwayShortName = ''): PublicState {
   const customOpponent = cleanOpponentName(customAwayTeam);
+  const customShortName = cleanOpponentShortName(customAwayShortName);
   const quickMatch = quickSimulationMatches.find((option) => option.id === matchId);
   const match = customOpponent
-    ? { id: 'france-custom', homeTeam: franceTeam, awayTeam: createTeam(customOpponent) }
-    : quickMatch;
+    ? {
+        id: 'france-custom',
+        homeTeam: franceTeam,
+        awayTeam: withCustomShortName(createTeam(customOpponent), customShortName),
+      }
+    : quickMatch && {
+        ...quickMatch,
+        awayTeam: withCustomShortName(quickMatch.awayTeam, customShortName),
+      };
 
   if (!match) {
     throw new Error('Unknown match');
@@ -452,7 +482,7 @@ app.post<{ Body: SelectMatchBody }>('/api/match/select', async (request, reply) 
   }
 
   try {
-    return selectMatch(matchId, mode, request.body?.customAwayTeam);
+    return selectMatch(matchId, mode, request.body?.customAwayTeam, request.body?.customAwayShortName);
   } catch {
     return reply.code(400).send({ error: 'Invalid match selection' });
   }
