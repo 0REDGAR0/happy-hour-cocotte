@@ -1,257 +1,467 @@
 // @ts-nocheck
 
+const fallbackDrinks = [
+  { id: 'pinte-blonde', name: 'Pinte blonde', price: 7, happyHourPrice: 5.6, currency: 'EUR' },
+  { id: 'pinte-ipa', name: 'Pinte IPA', price: 8, happyHourPrice: 6.4, currency: 'EUR' },
+  { id: 'verre-vin', name: 'Verre de vin', price: 5, happyHourPrice: 4, currency: 'EUR' },
+  { id: 'cocktail-maison', name: 'Cocktail maison', price: 9, happyHourPrice: 7.2, currency: 'EUR' },
+  { id: 'soft', name: 'Soft', price: 3.5, happyHourPrice: 2.8, currency: 'EUR' },
+];
+
 const emptyState = {
+  displayMode: 'IDLE',
+  matchStatus: 'NOT_STARTED',
   happyHourActive: false,
   remainingSeconds: 0,
+  bannerMessage: '',
+  fullscreenMessage: '',
+  matchInfo: null,
+  score: null,
+  drinks: fallbackDrinks,
+  menu: {
+    drinks: fallbackDrinks,
+    happyHourDiscountRate: 0.2,
+  },
+  spotify: {
+    title: '',
+    artist: '',
+    albumArtUrl: null,
+    isPlaying: false,
+  },
   homeTeam: {
     name: 'France',
     shortName: 'FRA',
   },
   awayTeam: {
-    name: 'Unknown',
+    name: 'Adversaire',
     shortName: 'ADV',
   },
   homeScore: 0,
   awayScore: 0,
 };
 
-const discountRate = 0.2;
-const drinks = [
-  { name: 'Pinte blonde', price: 7 },
-  { name: 'Pinte IPA', price: 8 },
-  { name: 'Verre de vin', price: 5 },
-  { name: 'Cocktail maison', price: 9 },
-  { name: 'Soft', price: 3.5 },
-];
-const confettiColors = ['#af593f', '#5e8f63', '#e0b24b', '#5c3a21', '#6d5b4b'];
-const burstDurationMs = 4200;
-const waitingMessageMinDelayMs = 20000;
-const waitingMessageMaxDelayMs = 30000;
-const waitingMessageTransitionMs = 420;
-const waitingMessages = [
-  'En attente du prochain declenchement',
-  'Un but fran\u00e7ais peut lancer la f\u00eate \u00e0 tout moment',
-  "Restez pr\u00eats, la happy hour peut tomber d'un instant \u00e0 l'autre",
-  'Prochain but des Bleus : -20 % sur les boissons s\u00e9lectionn\u00e9es',
-  'Le match continue, la Cocotte surveille le score',
-  'Si la France marque, le chrono d\u00e9marre',
-];
-let previousHappyHourActive = false;
-let hasRenderedState = false;
-let burstTimeout = 0;
-let waitingMessageTimeout = 0;
-let waitingMessageTransitionTimeout = 0;
-let waitingMessageIndex = 0;
+const displayModes = new Set([
+  'PRE_MATCH',
+  'MATCH_LIVE',
+  'HAPPY_HOUR',
+  'HALF_TIME',
+  'FULL_TIME',
+  'FULLSCREEN_MESSAGE',
+  'IDLE',
+]);
 
-function element(selector = '') {
-  const match = document.querySelector(selector);
+const stage = document.querySelector('#tv-stage');
+const topBanner = document.querySelector('#top-banner');
+let statePollInFlight = false;
 
-  if (!match) {
-    throw new Error(`Missing element: ${selector}`);
-  }
-
-  return match;
+function escapeHtml(value = '') {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
-const homeTeam = element('#home-team');
-const awayTeam = element('#away-team');
-const homeScore = element('#home-score');
-const awayScore = element('#away-score');
-const matchFullName = element('#match-full-name');
-const timer = element('#timer');
-const activeMessage = element('#active-message');
-const inactiveMessage = element('#inactive-message');
-const waitingMessage = element('#waiting-message');
-const drinkList = element('#drink-list');
-const drinksNote = element('#drinks-note');
-const confettiLayer = element('#confetti-layer');
-const goalBurst = element('#goal-burst');
-const burstConfetti = element('#burst-confetti');
+function elementText(value = '', fallback = '-') {
+  const text = String(value ?? '').trim();
+  return escapeHtml(text || fallback);
+}
 
 function formatSeconds(totalSeconds = 0) {
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
+  const safeSeconds = Math.max(0, Number(totalSeconds) || 0);
+  const minutes = Math.floor(safeSeconds / 60);
+  const seconds = safeSeconds % 60;
   return `${minutes}:${String(seconds).padStart(2, '0')}`;
 }
 
-function formatPrice(price = 0) {
-  return `${price.toFixed(2)} \u20ac`;
+function formatPrice(value = 0, currency = 'EUR') {
+  const amount = Number(value) || 0;
+  const suffix = currency === 'EUR' ? '€' : currency;
+  return `${amount.toFixed(2)} ${suffix}`;
 }
 
-function createDrinkCard(drink) {
-  const item = document.createElement('article');
-  const name = document.createElement('h3');
-  const prices = document.createElement('div');
-  const normalPrice = document.createElement('span');
-  const arrow = document.createElement('span');
-  const discountedPrice = document.createElement('strong');
-  const reducedPrice = drink.price * (1 - discountRate);
-
-  item.className = 'drink-item';
-  name.textContent = drink.name;
-  prices.className = 'drink-prices';
-  normalPrice.className = 'normal-price';
-  normalPrice.textContent = formatPrice(drink.price);
-  arrow.className = 'price-arrow';
-  arrow.setAttribute('aria-hidden', 'true');
-  discountedPrice.className = 'discount-price';
-  discountedPrice.textContent = formatPrice(reducedPrice);
-
-  prices.append(normalPrice, arrow, discountedPrice);
-  item.append(name, prices);
-
-  return item;
-}
-
-function renderDrinks() {
-  drinkList.replaceChildren(...drinks.map(createDrinkCard));
-}
-
-function renderConfetti() {
-  const fragments = [];
-
-  for (let index = 0; index < 18; index += 1) {
-    const piece = document.createElement('span');
-    const color = confettiColors[index % confettiColors.length];
-
-    piece.className = 'confetti';
-    piece.style.setProperty('--x', `${Math.round(Math.random() * 96)}vw`);
-    piece.style.setProperty('--delay', `${(Math.random() * 3).toFixed(2)}s`);
-    piece.style.setProperty('--duration', `${(5.4 + Math.random() * 3).toFixed(2)}s`);
-    piece.style.setProperty('--spin', `${Math.round(240 + Math.random() * 480)}deg`);
-    piece.style.setProperty('--confetti-color', color);
-    fragments.push(piece);
-  }
-
-  confettiLayer.replaceChildren(...fragments);
-}
-
-function renderBurstConfetti() {
-  const fragments = [];
-
-  for (let index = 0; index < 28; index += 1) {
-    const piece = document.createElement('span');
-    const color = confettiColors[index % confettiColors.length];
-    const side = index % 2 === 0 ? -1 : 1;
-
-    piece.className = 'burst-piece';
-    piece.style.setProperty('--burst-x', `${side * (18 + Math.round(Math.random() * 26))}vw`);
-    piece.style.setProperty('--burst-y', `${-24 + Math.round(Math.random() * 66)}vh`);
-    piece.style.setProperty('--burst-delay', `${(Math.random() * 0.55).toFixed(2)}s`);
-    piece.style.setProperty('--burst-spin', `${Math.round(180 + Math.random() * 540)}deg`);
-    piece.style.setProperty('--confetti-color', color);
-    fragments.push(piece);
-  }
-
-  burstConfetti.replaceChildren(...fragments);
-}
-
-function playGoalBurst() {
-  window.clearTimeout(burstTimeout);
-  renderBurstConfetti();
-  goalBurst.hidden = false;
-  goalBurst.classList.remove('playing');
-  void goalBurst.offsetWidth;
-  goalBurst.classList.add('playing');
-
-  burstTimeout = window.setTimeout(() => {
-    goalBurst.classList.remove('playing');
-    goalBurst.hidden = true;
-  }, burstDurationMs);
-}
-
-function showNextWaitingMessage() {
-  waitingMessageIndex = (waitingMessageIndex + 1) % waitingMessages.length;
-  waitingMessage.classList.add('is-changing');
-
-  window.clearTimeout(waitingMessageTransitionTimeout);
-  waitingMessageTransitionTimeout = window.setTimeout(() => {
-    waitingMessage.textContent = waitingMessages[waitingMessageIndex];
-    waitingMessage.classList.remove('is-changing');
-    waitingMessageTransitionTimeout = 0;
-    scheduleNextWaitingMessage();
-  }, waitingMessageTransitionMs);
-}
-
-function getNextWaitingMessageDelay() {
-  return waitingMessageMinDelayMs
-    + Math.round(Math.random() * (waitingMessageMaxDelayMs - waitingMessageMinDelayMs));
-}
-
-function scheduleNextWaitingMessage() {
-  window.clearTimeout(waitingMessageTimeout);
-  waitingMessageTimeout = window.setTimeout(showNextWaitingMessage, getNextWaitingMessageDelay());
-}
-
-function startWaitingMessages() {
-  if (!waitingMessageTimeout && !waitingMessageTransitionTimeout) {
-    scheduleNextWaitingMessage();
-  }
-}
-
-function stopWaitingMessages() {
-  window.clearTimeout(waitingMessageTimeout);
-  window.clearTimeout(waitingMessageTransitionTimeout);
-  waitingMessageTimeout = 0;
-  waitingMessageTransitionTimeout = 0;
-  waitingMessage.classList.remove('is-changing');
-}
-
-function getTeamName(team = '') {
-  return typeof team === 'string' ? team : team.name;
-}
-
-function getTeamShortName(team = '') {
+function getTeamName(team, fallback = '') {
   if (typeof team === 'string') {
     return team;
   }
 
-  return team.shortName || team.name;
+  return team?.name || fallback;
 }
 
-function renderState(state = emptyState) {
-  const homeName = getTeamName(state.homeTeam);
-  const awayName = getTeamName(state.awayTeam);
-  const shouldPlayBurst = hasRenderedState
-    && !previousHappyHourActive
-    && state.happyHourActive;
+function getTeamShortName(team, fallback = '') {
+  if (typeof team === 'string') {
+    return team;
+  }
 
-  homeTeam.textContent = getTeamShortName(state.homeTeam);
-  awayTeam.textContent = getTeamShortName(state.awayTeam);
-  homeScore.textContent = String(state.homeScore);
-  awayScore.textContent = String(state.awayScore);
-  matchFullName.textContent = `${homeName} vs ${awayName}`;
-  timer.textContent = formatSeconds(state.remainingSeconds);
+  return team?.shortName || team?.name || fallback;
+}
 
-  document.body.classList.toggle('happy-hour-active', state.happyHourActive);
-  activeMessage.toggleAttribute('hidden', !state.happyHourActive);
-  inactiveMessage.toggleAttribute('hidden', state.happyHourActive);
-  drinksNote.textContent = state.happyHourActive
-    ? '-20 % appliqu\u00e9s pendant le chrono'
-    : 'Prix habituels';
+function getMatchInfo(state = emptyState) {
+  const info = state.matchInfo || {};
+  const homeTeam = info.homeTeam || state.homeTeam || emptyState.homeTeam;
+  const awayTeam = info.awayTeam || state.awayTeam || emptyState.awayTeam;
+  const score = state.score || {};
+  const homeScore = Number.isFinite(info.homeScore)
+    ? info.homeScore
+    : Number.isFinite(state.homeScore)
+      ? state.homeScore
+      : score.homeScore ?? score.home ?? 0;
+  const awayScore = Number.isFinite(info.awayScore)
+    ? info.awayScore
+    : Number.isFinite(state.awayScore)
+      ? state.awayScore
+      : score.awayScore ?? score.away ?? 0;
+
+  return {
+    homeTeam,
+    awayTeam,
+    homeName: getTeamName(homeTeam, 'France'),
+    awayName: getTeamName(awayTeam, 'Adversaire'),
+    homeShortName: getTeamShortName(homeTeam, 'FRA'),
+    awayShortName: getTeamShortName(awayTeam, 'ADV'),
+    homeScore,
+    awayScore,
+    title: info.matchTitle || state.matchTitle || `${getTeamName(homeTeam, 'France')} vs ${getTeamName(awayTeam, 'Adversaire')}`,
+    description: info.matchDescription || state.matchDescription || 'Match Cocotte Happy Hour',
+  };
+}
+
+function getDrinks(state = emptyState) {
+  const drinks = Array.isArray(state.drinks) && state.drinks.length
+    ? state.drinks
+    : Array.isArray(state.menu?.drinks) && state.menu.drinks.length
+      ? state.menu.drinks
+      : fallbackDrinks;
+
+  return drinks.slice(0, 5);
+}
+
+function getSpotify(state = emptyState) {
+  return {
+    title: state.spotify?.title || 'Playlist Cocotte',
+    artist: state.spotify?.artist || 'En attente de lecture',
+    albumArtUrl: state.spotify?.albumArtUrl || '',
+    isPlaying: Boolean(state.spotify?.isPlaying),
+  };
+}
+
+function getDisplayMode(state = emptyState) {
+  if (state.fullscreenMessage) {
+    return 'FULLSCREEN_MESSAGE';
+  }
 
   if (state.happyHourActive) {
-    stopWaitingMessages();
-  } else {
-    startWaitingMessages();
+    return 'HAPPY_HOUR';
   }
 
-  if (shouldPlayBurst) {
-    playGoalBurst();
+  if (displayModes.has(state.displayMode)) {
+    return state.displayMode;
   }
 
-  previousHappyHourActive = state.happyHourActive;
-  hasRenderedState = true;
+  switch (state.matchStatus) {
+    case 'FIRST_HALF':
+    case 'SECOND_HALF':
+      return 'MATCH_LIVE';
+    case 'HALF_TIME':
+      return 'HALF_TIME';
+    case 'FINISHED':
+      return 'FULL_TIME';
+    case 'NOT_STARTED':
+      return 'PRE_MATCH';
+    default:
+      return 'IDLE';
+  }
 }
 
-async function loadInitialState() {
-  const response = await fetch('/api/state');
+function renderScoreBug(match) {
+  return `
+    <aside class="score-bug" aria-label="Score actuel">
+      <span>${elementText(match.homeShortName, 'FRA')}</span>
+      <strong>${escapeHtml(match.homeScore)} - ${escapeHtml(match.awayScore)}</strong>
+      <span>${elementText(match.awayShortName, 'ADV')}</span>
+    </aside>
+  `;
+}
 
-  if (!response.ok) {
-    throw new Error(`Request failed: ${response.status}`);
+function renderBrandBlock() {
+  return `
+    <section class="brand-panel">
+      <p class="kicker">Cocotte</p>
+      <h1>Happy Hour</h1>
+      <p class="brand-subtitle">Football, bar et bons moments en direct</p>
+      <div class="brand-mark" aria-hidden="true">
+        <span>C</span>
+      </div>
+    </section>
+  `;
+}
+
+function renderMusicCard(state) {
+  const spotify = getSpotify(state);
+  const playingLabel = spotify.isPlaying ? 'Lecture en cours' : 'Pause';
+  const albumArt = spotify.albumArtUrl
+    ? `<img src="${escapeHtml(spotify.albumArtUrl)}" alt="">`
+    : '<div class="album-placeholder" aria-hidden="true">SP</div>';
+
+  return `
+    <section class="music-card" aria-label="Musique actuelle">
+      ${albumArt}
+      <div>
+        <p class="micro-label">Musique actuelle</p>
+        <strong>${elementText(spotify.title, 'Playlist Cocotte')}</strong>
+        <span>${elementText(spotify.artist, 'En attente de lecture')}</span>
+        <small>${playingLabel}</small>
+      </div>
+    </section>
+  `;
+}
+
+function renderDrinkList(state, compact = false) {
+  return `
+    <section class="drinks-card ${compact ? 'is-compact' : ''}" aria-label="Carte boissons">
+      <div class="panel-heading">
+        <p class="kicker">Carte boissons</p>
+        <h2>Offre Cocotte</h2>
+      </div>
+      <div class="drink-list">
+        ${getDrinks(state).map((drink) => `
+          <article class="drink-row">
+            <span>${elementText(drink.name, 'Boisson')}</span>
+            <div>
+              <small>${formatPrice(drink.price, drink.currency)}</small>
+              <strong>${formatPrice(drink.happyHourPrice ?? drink.price, drink.currency)}</strong>
+            </div>
+          </article>
+        `).join('')}
+      </div>
+    </section>
+  `;
+}
+
+function renderPreMatch(state) {
+  const match = getMatchInfo(state);
+
+  return `
+    <div class="pre-match-layout">
+      <div class="left-stack">
+        ${renderBrandBlock()}
+        ${renderMusicCard(state)}
+      </div>
+      <section class="match-preview panel">
+        <p class="kicker">Prochain match</p>
+        <h2>${elementText(match.title)}</h2>
+        <div class="versus-card">
+          <div>
+            <span>${elementText(match.homeShortName)}</span>
+            <strong>${elementText(match.homeName)}</strong>
+          </div>
+          <em>VS</em>
+          <div>
+            <span>${elementText(match.awayShortName)}</span>
+            <strong>${elementText(match.awayName)}</strong>
+          </div>
+        </div>
+        <p class="match-description">${elementText(match.description, 'Avant match')}</p>
+        ${renderDrinkList(state)}
+      </section>
+    </div>
+  `;
+}
+
+function renderMatchLive(state) {
+  const match = getMatchInfo(state);
+
+  return `
+    <section class="broadcast-panel">
+      <div class="broadcast-label">
+        <span>Direct match</span>
+        <strong>${elementText(match.description, 'Match en cours')}</strong>
+      </div>
+      <div class="field-lines" aria-hidden="true"></div>
+      <div class="live-center">
+        <p class="kicker">Cocotte TV</p>
+        <h1>${elementText(match.title)}</h1>
+        <p>Overlay actif pendant la diffusion</p>
+      </div>
+      ${renderScoreBug(match)}
+    </section>
+  `;
+}
+
+function renderHappyHour(state) {
+  const match = getMatchInfo(state);
+
+  return `
+    <section class="happy-hour-layout">
+      <aside class="happy-panel">
+        <p class="kicker">But France</p>
+        <h1>Happy Hour en cours</h1>
+        <p class="offer-pill">-20 % sur une sélection de boissons</p>
+        <div class="timer-block">
+          <span>Temps restant</span>
+          <strong>${formatSeconds(state.remainingSeconds)}</strong>
+        </div>
+        ${renderDrinkList(state, true)}
+      </aside>
+      <section class="dark-broadcast">
+        <div class="field-lines" aria-hidden="true"></div>
+        <p>Diffusion TV en arrière-plan</p>
+        ${renderScoreBug(match)}
+      </section>
+    </section>
+  `;
+}
+
+function renderHalfTime(state) {
+  const match = getMatchInfo(state);
+  const serviceMessage = state.bannerMessage || 'Service au bar, reprise à suivre.';
+  const timer = Number(state.remainingSeconds) > 0
+    ? `<div class="resume-timer"><span>Reprise dans</span><strong>${formatSeconds(state.remainingSeconds)}</strong></div>`
+    : '';
+
+  return `
+    <section class="event-screen half-time-screen">
+      <p class="kicker">Mi-temps</p>
+      <h1>Pause au bar</h1>
+      <div class="big-score">
+        <span>${elementText(match.homeShortName)}</span>
+        <strong>${escapeHtml(match.homeScore)} - ${escapeHtml(match.awayScore)}</strong>
+        <span>${elementText(match.awayShortName)}</span>
+      </div>
+      ${timer}
+      <p class="event-message">${elementText(serviceMessage)}</p>
+    </section>
+  `;
+}
+
+function renderFullTime(state) {
+  const match = getMatchInfo(state);
+
+  return `
+    <section class="event-screen full-time-screen">
+      <p class="kicker">Fin de match</p>
+      <h1>Merci d'avoir suivi le match à la Cocotte</h1>
+      <div class="big-score">
+        <span>${elementText(match.homeShortName)}</span>
+        <strong>${escapeHtml(match.homeScore)} - ${escapeHtml(match.awayScore)}</strong>
+        <span>${elementText(match.awayShortName)}</span>
+      </div>
+      <p class="event-message">La soirée continue au bar.</p>
+    </section>
+  `;
+}
+
+function renderFullscreenMessage(state) {
+  const message = state.fullscreenMessage || state.bannerMessage || 'Information Cocotte';
+
+  return `
+    <section class="fullscreen-message-screen">
+      <div class="info-panel">
+        <p class="kicker">Information</p>
+        <h1>${elementText(message)}</h1>
+        <span>Cocotte Happy Hour</span>
+      </div>
+    </section>
+  `;
+}
+
+function renderIdle() {
+  return `
+    <section class="idle-screen">
+      <p class="kicker">Cocotte Happy Hour</p>
+      <h1>Overlay éteint</h1>
+      <p>En attente d'un match ou d'un message TV.</p>
+    </section>
+  `;
+}
+
+function renderTopBanner(state, mode) {
+  const message = String(state.bannerMessage || '').trim();
+  const shouldShow = message && mode !== 'FULLSCREEN_MESSAGE' && mode !== 'IDLE';
+
+  topBanner.hidden = !shouldShow;
+  topBanner.textContent = shouldShow ? message : '';
+}
+
+function renderState(incomingState = emptyState) {
+  const state = {
+    ...emptyState,
+    ...incomingState,
+    spotify: {
+      ...emptyState.spotify,
+      ...(incomingState.spotify || {}),
+    },
+  };
+  const mode = getDisplayMode(state);
+  const modeClass = `mode-${mode.toLowerCase().replaceAll('_', '-')}`;
+
+  renderTopBanner(state, mode);
+  document.body.className = modeClass;
+  stage.className = `tv-stage ${modeClass}`;
+
+  switch (mode) {
+    case 'PRE_MATCH':
+      stage.innerHTML = renderPreMatch(state);
+      break;
+    case 'MATCH_LIVE':
+      stage.innerHTML = renderMatchLive(state);
+      break;
+    case 'HAPPY_HOUR':
+      stage.innerHTML = renderHappyHour(state);
+      break;
+    case 'HALF_TIME':
+      stage.innerHTML = renderHalfTime(state);
+      break;
+    case 'FULL_TIME':
+      stage.innerHTML = renderFullTime(state);
+      break;
+    case 'FULLSCREEN_MESSAGE':
+      stage.innerHTML = renderFullscreenMessage(state);
+      break;
+    case 'IDLE':
+    default:
+      stage.innerHTML = renderIdle();
+      break;
+  }
+}
+
+async function readResponseJson(response) {
+  const text = await response.text();
+
+  if (!text) {
+    return {};
   }
 
-  renderState(await response.json());
+  try {
+    return JSON.parse(text);
+  } catch {
+    return {};
+  }
+}
+
+async function loadState() {
+  const response = await fetch('/api/state', { cache: 'no-store' });
+
+  if (!response.ok) {
+    return;
+  }
+
+  renderState(await readResponseJson(response));
+}
+
+async function pollState() {
+  if (statePollInFlight) {
+    return;
+  }
+
+  statePollInFlight = true;
+
+  try {
+    await loadState();
+  } finally {
+    statePollInFlight = false;
+  }
 }
 
 function connectRealtime() {
@@ -259,7 +469,11 @@ function connectRealtime() {
   const socket = new WebSocket(`${protocol}//${window.location.host}/ws`);
 
   socket.addEventListener('message', (event) => {
-    renderState(JSON.parse(event.data));
+    try {
+      renderState(JSON.parse(event.data));
+    } catch {
+      // Polling keeps the screen current if a realtime payload is malformed.
+    }
   });
 
   socket.addEventListener('close', () => {
@@ -267,10 +481,11 @@ function connectRealtime() {
   });
 }
 
-void loadInitialState();
+renderState(emptyState);
+void loadState();
 connectRealtime();
-renderDrinks();
-renderConfetti();
-renderBurstConfetti();
+window.setInterval(() => {
+  void pollState();
+}, 1000);
 
 export {};
