@@ -8,6 +8,13 @@ import { config } from './config.js';
 import { ApiFootballProvider } from './football/api-football-provider.js';
 import type { FranceMatchCandidate } from './football/football-provider.js';
 import { createTeam } from './football/team-names.js';
+import type {
+  DisplayMode,
+  DisplayStateV2,
+  DrinkMenuItem,
+  MatchStatus,
+  SpotifyPlaceholder,
+} from '../types/display-state.js';
 import type { MatchMode, MatchProvider, MatchTeam, ScoreSource } from '../types/match.js';
 
 type MatchOption = {
@@ -17,6 +24,8 @@ type MatchOption = {
 };
 
 type PublicState = {
+  displayMode: DisplayMode;
+  matchStatus: MatchStatus;
   happyHourActive: boolean;
   remainingSeconds: number;
   scoreLockActive: boolean;
@@ -33,6 +42,20 @@ type PublicState = {
   awayTeam: MatchTeam;
   homeScore: number;
   awayScore: number;
+  score: {
+    home: number;
+    away: number;
+    homeScore: number;
+    awayScore: number;
+  };
+  matchTitle: string;
+  matchDescription: string;
+  matchInfo: DisplayStateV2['matchInfo'];
+  bannerMessage: string;
+  fullscreenMessage: string;
+  drinks: DrinkMenuItem[];
+  menu: DisplayStateV2['menu'];
+  spotify: SpotifyPlaceholder;
 };
 
 type SelectMatchBody = {
@@ -44,6 +67,11 @@ type SelectMatchBody = {
 
 type SelectApiMatchBody = {
   matchId?: string;
+};
+
+type DisplayMessageBody = {
+  message?: string;
+  text?: string;
 };
 
 type ScoreActionType = 'home-goal' | 'away-goal';
@@ -84,7 +112,31 @@ const quickSimulationMatches: MatchOption[] = [
 const apiFootballProvider = new ApiFootballProvider();
 let cachedFranceApiMatches: FranceMatchCandidate[] = [];
 
+const happyHourDiscountRate = 0.2;
+const baseDrinks = [
+  { id: 'pinte-blonde', name: 'Pinte blonde', price: 7 },
+  { id: 'pinte-ipa', name: 'Pinte IPA', price: 8 },
+  { id: 'verre-vin', name: 'Verre de vin', price: 5 },
+  { id: 'cocktail-maison', name: 'Cocktail maison', price: 9 },
+  { id: 'soft', name: 'Soft', price: 3.5 },
+];
+
+const drinks: DrinkMenuItem[] = baseDrinks.map((drink) => ({
+  ...drink,
+  happyHourPrice: Number((drink.price * (1 - happyHourDiscountRate)).toFixed(2)),
+  currency: 'EUR',
+}));
+
+const spotifyPlaceholder: SpotifyPlaceholder = {
+  title: '',
+  artist: '',
+  albumArtUrl: null,
+  isPlaying: false,
+};
+
 const state: PublicState = {
+  displayMode: 'PRE_MATCH',
+  matchStatus: 'NOT_STARTED',
   happyHourActive: false,
   remainingSeconds: 0,
   scoreLockActive: false,
@@ -101,6 +153,30 @@ const state: PublicState = {
   awayTeam: createTeam('Unknown'),
   homeScore: 0,
   awayScore: 0,
+  score: {
+    home: 0,
+    away: 0,
+    homeScore: 0,
+    awayScore: 0,
+  },
+  matchTitle: 'France vs Unknown',
+  matchDescription: 'Avant match',
+  matchInfo: {
+    homeTeam: franceTeam,
+    awayTeam: createTeam('Unknown'),
+    homeScore: 0,
+    awayScore: 0,
+    matchTitle: 'France vs Unknown',
+    matchDescription: 'Avant match',
+  },
+  bannerMessage: '',
+  fullscreenMessage: '',
+  drinks,
+  menu: {
+    happyHourDiscountRate,
+    drinks,
+  },
+  spotify: spotifyPlaceholder,
 };
 
 const sockets = new Set<WebSocket>();
@@ -127,16 +203,94 @@ function getLastActionLabel(action: LastScoreAction | null): string | null {
     : `But ${action.team.name}`;
 }
 
+function cleanDisplayMessage(value: unknown, maxLength: number): string {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  return value.trim().replace(/\s+/g, ' ').slice(0, maxLength);
+}
+
+function getMatchTitle(): string {
+  return `${state.homeTeam.name} vs ${state.awayTeam.name}`;
+}
+
+function getMatchDescription(): string {
+  switch (state.matchStatus) {
+    case 'FIRST_HALF':
+      return 'Premiere mi-temps';
+    case 'HALF_TIME':
+      return 'Mi-temps';
+    case 'SECOND_HALF':
+      return 'Deuxieme mi-temps';
+    case 'FINISHED':
+      return 'Match termine';
+    case 'NOT_STARTED':
+    default:
+      return 'Avant match';
+  }
+}
+
+function getDisplayMode(): DisplayMode {
+  if (state.fullscreenMessage) {
+    return 'FULLSCREEN_MESSAGE';
+  }
+
+  if (state.happyHourActive) {
+    return 'HAPPY_HOUR';
+  }
+
+  switch (state.matchStatus) {
+    case 'FIRST_HALF':
+    case 'SECOND_HALF':
+      return 'MATCH_LIVE';
+    case 'HALF_TIME':
+      return 'HALF_TIME';
+    case 'FINISHED':
+      return 'FULL_TIME';
+    case 'NOT_STARTED':
+      return state.selectedMatchId ? 'PRE_MATCH' : 'IDLE';
+    default:
+      return 'IDLE';
+  }
+}
+
 function getState(): PublicState {
   const scoreLockRemainingSeconds = getScoreLockRemainingSeconds();
   const scoreLockActive = scoreLockRemainingSeconds > 0;
+  const matchTitle = getMatchTitle();
+  const matchDescription = getMatchDescription();
+  const matchInfo = {
+    homeTeam: state.homeTeam,
+    awayTeam: state.awayTeam,
+    homeScore: state.homeScore,
+    awayScore: state.awayScore,
+    matchTitle,
+    matchDescription,
+  };
 
   return {
     ...state,
+    displayMode: getDisplayMode(),
     scoreLockActive,
     scoreLockRemainingSeconds,
     canUndoLastAction: scoreLockActive && lastScoreAction !== null,
     lastActionLabel: scoreLockActive ? getLastActionLabel(lastScoreAction) : null,
+    score: {
+      home: state.homeScore,
+      away: state.awayScore,
+      homeScore: state.homeScore,
+      awayScore: state.awayScore,
+    },
+    matchTitle,
+    matchDescription,
+    matchInfo,
+    drinks,
+    menu: {
+      happyHourDiscountRate,
+      drinks,
+    },
+    spotify: spotifyPlaceholder,
   };
 }
 
@@ -221,6 +375,7 @@ function selectMatch(matchId: string, mode: MatchMode, customAwayTeam = '', cust
 
   state.selectedMatchId = customOpponent ? `france-custom-${customOpponent.toLowerCase()}` : match.id;
   state.matchStarted = true;
+  state.matchStatus = 'NOT_STARTED';
   state.matchMode = mode;
   state.scoreSource = mode === 'simulation' ? 'simulation' : 'api-live-placeholder';
   state.source = state.scoreSource;
@@ -231,6 +386,7 @@ function selectMatch(matchId: string, mode: MatchMode, customAwayTeam = '', cust
   state.awayScore = 0;
   state.happyHourActive = false;
   state.remainingSeconds = 0;
+  state.fullscreenMessage = '';
   scoreLockUntil = 0;
   lastScoreAction = null;
   broadcastState();
@@ -240,6 +396,7 @@ function selectMatch(matchId: string, mode: MatchMode, customAwayTeam = '', cust
 function applyApiMatchSelection(match: FranceMatchCandidate): PublicState {
   state.selectedMatchId = `api-football-${match.id}`;
   state.matchStarted = true;
+  state.matchStatus = 'NOT_STARTED';
   state.matchMode = 'api-live';
   state.scoreSource = 'api-live-placeholder';
   state.source = state.scoreSource;
@@ -250,6 +407,7 @@ function applyApiMatchSelection(match: FranceMatchCandidate): PublicState {
   state.awayScore = match.awayScore;
   state.happyHourActive = false;
   state.remainingSeconds = 0;
+  state.fullscreenMessage = '';
   scoreLockUntil = 0;
   lastScoreAction = null;
   broadcastState();
@@ -346,6 +504,55 @@ function resetScore(): PublicState {
   state.awayScore = 0;
   scoreLockUntil = 0;
   lastScoreAction = null;
+  broadcastState();
+  return getState();
+}
+
+function startMatch(): PublicState {
+  state.matchStarted = true;
+  state.matchStatus = 'FIRST_HALF';
+  broadcastState();
+  return getState();
+}
+
+function setHalfTime(): PublicState {
+  state.matchStarted = true;
+  state.matchStatus = 'HALF_TIME';
+  broadcastState();
+  return getState();
+}
+
+function resumeMatch(): PublicState {
+  state.matchStarted = true;
+  state.matchStatus = 'SECOND_HALF';
+  broadcastState();
+  return getState();
+}
+
+function finishMatch(): PublicState {
+  state.matchStarted = false;
+  state.matchStatus = 'FINISHED';
+  state.happyHourActive = false;
+  state.remainingSeconds = 0;
+  broadcastState();
+  return getState();
+}
+
+function setBannerMessage(message: string): PublicState {
+  state.bannerMessage = message;
+  broadcastState();
+  return getState();
+}
+
+function setFullscreenMessage(message: string): PublicState {
+  state.fullscreenMessage = message;
+  broadcastState();
+  return getState();
+}
+
+function clearDisplayMessages(): PublicState {
+  state.bannerMessage = '';
+  state.fullscreenMessage = '';
   broadcastState();
   return getState();
 }
@@ -502,6 +709,46 @@ app.post<{ Body: SelectApiMatchBody }>('/api/match/select-api', async (request, 
       error: error instanceof Error ? error.message : 'Invalid API match selection',
     });
   }
+});
+
+app.post('/api/match/start', async () => {
+  return startMatch();
+});
+
+app.post('/api/match/half-time', async () => {
+  return setHalfTime();
+});
+
+app.post('/api/match/resume', async () => {
+  return resumeMatch();
+});
+
+app.post('/api/match/finish', async () => {
+  return finishMatch();
+});
+
+app.post<{ Body: DisplayMessageBody }>('/api/display/banner', async (request, reply) => {
+  const message = cleanDisplayMessage(request.body?.message ?? request.body?.text, 160);
+
+  if (!message) {
+    return reply.code(400).send({ error: 'Missing banner message' });
+  }
+
+  return setBannerMessage(message);
+});
+
+app.post<{ Body: DisplayMessageBody }>('/api/display/fullscreen-message', async (request, reply) => {
+  const message = cleanDisplayMessage(request.body?.message ?? request.body?.text, 320);
+
+  if (!message) {
+    return reply.code(400).send({ error: 'Missing fullscreen message' });
+  }
+
+  return setFullscreenMessage(message);
+});
+
+app.post('/api/display/clear-message', async () => {
+  return clearDisplayMessages();
 });
 
 app.post('/api/override/start', async () => {

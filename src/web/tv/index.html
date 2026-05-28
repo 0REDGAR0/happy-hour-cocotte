@@ -3,58 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Cocotte Goal Happy Hour - Public</title>
+  <title>Cocotte Goal Happy Hour - TV</title>
   <link rel="stylesheet" href="/tv/tv.css">
 </head>
 <body>
-  <div class="confetti-layer" id="confetti-layer" aria-hidden="true"></div>
-  <div class="goal-burst" id="goal-burst" aria-hidden="true">
-    <div class="burst-rays"></div>
-    <div class="burst-confetti" id="burst-confetti"></div>
-    <div class="burst-message">
-      <strong>But France</strong>
-      <span>-20 % MAINTENANT</span>
-    </div>
-  </div>
+  <div class="broadcast-texture" aria-hidden="true"></div>
+  <div class="top-banner" id="top-banner" hidden></div>
 
-  <main class="tv-shell" aria-label="Affichage public Cocotte">
-    <section class="tv-score" aria-label="Score du match">
-      <span class="score-label">Match en cours</span>
-      <div class="score-row">
-        <span class="team-home" id="home-team">FRA</span>
-        <div class="score-value" aria-label="Score">
-          <strong id="home-score">0</strong>
-          <span class="score-separator">-</span>
-          <strong id="away-score">0</strong>
-        </div>
-        <span class="team-away" id="away-team">ADV</span>
-      </div>
-      <p id="match-full-name">France vs Unknown</p>
-    </section>
-
-    <section class="tv-main" aria-label="Affichage happy hour">
-      <section class="tv-message" aria-label="Etat happy hour">
-        <div class="inactive-message" id="inactive-message">
-          <p id="waiting-message">En attente du prochain declenchement</p>
-        </div>
-        <div class="active-message" id="active-message" hidden>
-          <p class="offer-line">-20 % sur une s&eacute;lection de boissons</p>
-          <h1 id="active-title">Happy Hour en cours</h1>
-          <div class="tv-timer" id="timer">10:00</div>
-        </div>
-        <p class="service-banner">Happy Hour : service au bar uniquement</p>
-      </section>
-
-      <section class="drinks-board" aria-label="Carte des boissons">
-        <div class="drinks-heading">
-          <div>
-            <p class="board-kicker">Carte Cocotte</p>
-            <h2>Boissons</h2>
-          </div>
-          <p id="drinks-note">Prix habituels</p>
-        </div>
-        <div class="drink-list" id="drink-list"></div>
-      </section>
+  <main class="tv-stage mode-idle" id="tv-stage" aria-live="polite" aria-label="Prévisualisation TV Cocotte">
+    <section class="idle-screen">
+      <p class="kicker">Cocotte Happy Hour</p>
+      <h1>Overlay en attente</h1>
     </section>
   </main>
 

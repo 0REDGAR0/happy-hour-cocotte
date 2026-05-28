@@ -70,6 +70,92 @@
         <p id="undo-status">Aucune action annulable</p>
       </div>
     </section>
+
+    <section class="control-grid" aria-label="Contrôles TV et match">
+      <article class="control-card match-control-card">
+        <div>
+          <p class="eyebrow">Contrôle du match</p>
+          <h2>Pilotage match</h2>
+        </div>
+        <div class="match-control-actions">
+          <button class="control-button primary" id="match-start-button" type="button">Démarrer le match</button>
+          <button class="control-button warning" id="match-half-time-button" type="button">Mi-temps</button>
+          <button class="control-button primary" id="match-resume-button" type="button">Reprendre la seconde période</button>
+          <button class="control-button danger" id="match-finish-button" type="button">Fin du match</button>
+        </div>
+      </article>
+
+      <article class="control-card tv-mode-card" aria-live="polite">
+        <div>
+          <p class="eyebrow">Mode TV actuel</p>
+          <h2>État affiché</h2>
+        </div>
+        <dl class="state-metrics">
+          <div>
+            <dt>displayMode</dt>
+            <dd id="display-mode-value">PRE_MATCH</dd>
+          </div>
+          <div>
+            <dt>matchStatus</dt>
+            <dd id="match-status-value">NOT_STARTED</dd>
+          </div>
+          <div>
+            <dt>happyHourActive</dt>
+            <dd id="happy-hour-active-value">false</dd>
+          </div>
+          <div>
+            <dt>remainingSeconds</dt>
+            <dd id="remaining-seconds-value">0</dd>
+          </div>
+          <div>
+            <dt>Score</dt>
+            <dd id="current-score-value">0 - 0</dd>
+          </div>
+        </dl>
+      </article>
+
+      <article class="control-card message-control-card">
+        <div>
+          <p class="eyebrow">Messages TV</p>
+          <h2>Bannière et plein écran</h2>
+        </div>
+        <div class="message-form">
+          <label class="message-field">
+            <span>Bannière</span>
+            <input id="banner-message-input" type="text" maxlength="160" placeholder="Message court pour le bandeau TV">
+          </label>
+          <button class="control-button primary" id="send-banner-button" type="button">Envoyer bannière</button>
+          <label class="message-field">
+            <span>Message plein écran</span>
+            <input id="fullscreen-message-input" type="text" maxlength="320" placeholder="Message prioritaire plein écran">
+          </label>
+          <button class="control-button primary" id="show-fullscreen-button" type="button">Afficher plein écran</button>
+          <button class="control-button neutral" id="clear-messages-button" type="button">Effacer messages</button>
+        </div>
+        <p class="message-status" id="display-message-status" aria-live="polite">Aucun message TV actif</p>
+      </article>
+
+      <article class="control-card music-card" aria-live="polite">
+        <div>
+          <p class="eyebrow">Musique actuelle</p>
+          <h2>Spotify</h2>
+        </div>
+        <dl class="music-metrics">
+          <div>
+            <dt>Titre</dt>
+            <dd id="spotify-title-value">-</dd>
+          </div>
+          <div>
+            <dt>Artiste</dt>
+            <dd id="spotify-artist-value">-</dd>
+          </div>
+          <div>
+            <dt>Lecture</dt>
+            <dd id="spotify-playing-value">Non</dd>
+          </div>
+        </dl>
+      </article>
+    </section>
   </main>
 
   <script type="module" src="/bar/bar.js"></script>

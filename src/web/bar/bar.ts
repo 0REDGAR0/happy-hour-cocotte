@@ -11,6 +11,16 @@ const emptyState = {
   matchStarted: false,
   matchMode: 'simulation',
   scoreSource: 'simulation',
+  displayMode: 'PRE_MATCH',
+  matchStatus: 'NOT_STARTED',
+  bannerMessage: '',
+  fullscreenMessage: '',
+  spotify: {
+    title: '',
+    artist: '',
+    albumArtUrl: null,
+    isPlaying: false,
+  },
   homeTeam: {
     name: 'France',
     shortName: 'FRA',
@@ -53,6 +63,24 @@ const scoreLockNotice = element('#score-lock-notice');
 const undoStatus = element('#undo-status');
 const audioToggleButton = element('#audio-toggle-button');
 const audioAlertBanner = element('#audio-alert-banner');
+const matchStartButton = element('#match-start-button');
+const matchHalfTimeButton = element('#match-half-time-button');
+const matchResumeButton = element('#match-resume-button');
+const matchFinishButton = element('#match-finish-button');
+const bannerMessageInput = element('#banner-message-input');
+const sendBannerButton = element('#send-banner-button');
+const fullscreenMessageInput = element('#fullscreen-message-input');
+const showFullscreenButton = element('#show-fullscreen-button');
+const clearMessagesButton = element('#clear-messages-button');
+const displayMessageStatus = element('#display-message-status');
+const displayModeValue = element('#display-mode-value');
+const matchStatusValue = element('#match-status-value');
+const happyHourActiveValue = element('#happy-hour-active-value');
+const remainingSecondsValue = element('#remaining-seconds-value');
+const currentScoreValue = element('#current-score-value');
+const spotifyTitleValue = element('#spotify-title-value');
+const spotifyArtistValue = element('#spotify-artist-value');
+const spotifyPlayingValue = element('#spotify-playing-value');
 
 const audioAlertsStorageKey = 'cocotte.bar.audioAlertsEnabled';
 let audioAlertsEnabled = localStorage.getItem(audioAlertsStorageKey) === 'true';
@@ -60,6 +88,7 @@ let audioContext = null;
 let hasRenderedState = false;
 let previousHappyHourActive = false;
 let alertAnimationTimeout = 0;
+let statePollInFlight = false;
 
 function formatSeconds(totalSeconds = 0) {
   const minutes = Math.floor(totalSeconds / 60);
@@ -81,6 +110,34 @@ function getTeamShortName(team = '') {
   }
 
   return team.shortName || team.name;
+}
+
+function getScoreParts(state = emptyState) {
+  const score = state.score || {};
+
+  return {
+    home: Number.isFinite(state.homeScore) ? state.homeScore : score.homeScore ?? score.home ?? 0,
+    away: Number.isFinite(state.awayScore) ? state.awayScore : score.awayScore ?? score.away ?? 0,
+  };
+}
+
+function setDisplayMessageStatus(message = '', kind = 'neutral') {
+  displayMessageStatus.textContent = message;
+  displayMessageStatus.dataset.kind = kind;
+}
+
+async function readResponseJson(response) {
+  const text = await response.text();
+
+  if (!text) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return {};
+  }
 }
 
 function renderAudioToggle() {
@@ -205,9 +262,39 @@ async function enableAudioAlerts() {
   await playHappyHourSound();
 }
 
+function renderTvControlState(state = emptyState) {
+  const score = getScoreParts(state);
+
+  displayModeValue.textContent = state.displayMode || 'PRE_MATCH';
+  matchStatusValue.textContent = state.matchStatus || (state.matchStarted ? 'FIRST_HALF' : 'NOT_STARTED');
+  happyHourActiveValue.textContent = String(Boolean(state.happyHourActive));
+  remainingSecondsValue.textContent = String(state.remainingSeconds ?? 0);
+  currentScoreValue.textContent = `${score.home} - ${score.away}`;
+
+  const banner = state.bannerMessage || '';
+  const fullscreen = state.fullscreenMessage || '';
+
+  if (fullscreen) {
+    setDisplayMessageStatus(`Plein écran actif : ${fullscreen}`, 'success');
+  } else if (banner) {
+    setDisplayMessageStatus(`Bannière active : ${banner}`, 'success');
+  } else {
+    setDisplayMessageStatus('Aucun message TV actif');
+  }
+}
+
+function renderSpotifyState(state = emptyState) {
+  const spotify = state.spotify || {};
+
+  spotifyTitleValue.textContent = spotify.title || '-';
+  spotifyArtistValue.textContent = spotify.artist || '-';
+  spotifyPlayingValue.textContent = spotify.isPlaying ? 'Oui' : 'Non';
+}
+
 function renderState(state = emptyState) {
   const homeName = getTeamName(state.homeTeam);
   const awayName = getTeamName(state.awayTeam);
+  const score = getScoreParts(state);
   const isScoreLocked = Boolean(state.scoreLockActive);
   const happyHourStarted = hasRenderedState
     && !previousHappyHourActive
@@ -215,8 +302,8 @@ function renderState(state = emptyState) {
 
   homeTeam.textContent = getTeamShortName(state.homeTeam);
   awayTeam.textContent = getTeamShortName(state.awayTeam);
-  homeScore.textContent = String(state.homeScore);
-  awayScore.textContent = String(state.awayScore);
+  homeScore.textContent = String(score.home);
+  awayScore.textContent = String(score.away);
   matchFullName.textContent = `${homeName} vs ${awayName}`;
   timer.textContent = formatSeconds(state.remainingSeconds);
 
@@ -243,6 +330,8 @@ function renderState(state = emptyState) {
   undoStatus.textContent = state.canUndoLastAction
     ? `Action annulable : ${state.lastActionLabel || 'dernier but'}`
     : 'Aucune action annulable';
+  renderTvControlState(state);
+  renderSpotifyState(state);
 
   if (happyHourStarted) {
     void triggerHappyHourAlert();
@@ -254,7 +343,7 @@ function renderState(state = emptyState) {
 
 async function postAction(path = '') {
   const response = await fetch(path, { method: 'POST' });
-  const payload = await response.json();
+  const payload = await readResponseJson(response);
 
   if (!response.ok) {
     if (payload.error === 'score_locked') {
@@ -271,6 +360,44 @@ async function postAction(path = '') {
   renderState(payload);
 }
 
+async function postJsonAction(path = '', body = {}) {
+  const response = await fetch(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const payload = await readResponseJson(response);
+
+  if (!response.ok) {
+    setDisplayMessageStatus(`Action TV refusée : ${response.status}`, 'error');
+    return;
+  }
+
+  renderState(payload);
+}
+
+async function sendBannerMessage() {
+  const message = bannerMessageInput.value.trim();
+
+  if (!message) {
+    setDisplayMessageStatus('Bannière vide, action ignorée', 'error');
+    return;
+  }
+
+  await postJsonAction('/api/display/banner', { message });
+}
+
+async function sendFullscreenMessage() {
+  const message = fullscreenMessageInput.value.trim();
+
+  if (!message) {
+    setDisplayMessageStatus('Message plein écran vide, action ignorée', 'error');
+    return;
+  }
+
+  await postJsonAction('/api/display/fullscreen-message', { message });
+}
+
 async function loadInitialState() {
   const response = await fetch('/api/state');
 
@@ -278,7 +405,25 @@ async function loadInitialState() {
     throw new Error(`Request failed: ${response.status}`);
   }
 
-  renderState(await response.json());
+  renderState(await readResponseJson(response));
+}
+
+async function pollState() {
+  if (statePollInFlight) {
+    return;
+  }
+
+  statePollInFlight = true;
+
+  try {
+    const response = await fetch('/api/state', { cache: 'no-store' });
+
+    if (response.ok) {
+      renderState(await readResponseJson(response));
+    }
+  } finally {
+    statePollInFlight = false;
+  }
 }
 
 function connectRealtime() {
@@ -286,7 +431,11 @@ function connectRealtime() {
   const socket = new WebSocket(`${protocol}//${window.location.host}/ws`);
 
   socket.addEventListener('message', (event) => {
-    renderState(JSON.parse(event.data));
+    try {
+      renderState(JSON.parse(event.data));
+    } catch {
+      // Ignore malformed realtime payloads; polling keeps the panel in sync.
+    }
   });
 
   socket.addEventListener('close', () => {
@@ -326,6 +475,34 @@ undoLastButton.addEventListener('click', () => {
   void postAction('/api/simulation/undo-last');
 });
 
+matchStartButton.addEventListener('click', () => {
+  void postAction('/api/match/start');
+});
+
+matchHalfTimeButton.addEventListener('click', () => {
+  void postAction('/api/match/half-time');
+});
+
+matchResumeButton.addEventListener('click', () => {
+  void postAction('/api/match/resume');
+});
+
+matchFinishButton.addEventListener('click', () => {
+  void postAction('/api/match/finish');
+});
+
+sendBannerButton.addEventListener('click', () => {
+  void sendBannerMessage();
+});
+
+showFullscreenButton.addEventListener('click', () => {
+  void sendFullscreenMessage();
+});
+
+clearMessagesButton.addEventListener('click', () => {
+  void postAction('/api/display/clear-message');
+});
+
 audioToggleButton.addEventListener('click', () => {
   void enableAudioAlerts();
 });
@@ -339,5 +516,8 @@ document.addEventListener('click', () => {
 renderAudioToggle();
 void loadInitialState();
 connectRealtime();
+window.setInterval(() => {
+  void pollState();
+}, 1000);
 
 export {};
