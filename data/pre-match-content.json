@@ -1,0 +1,116 @@
+{
+  "version": 1,
+  "drinks": [
+    {
+      "id": "pinte-blonde",
+      "name": "Pinte blonde",
+      "originalPrice": 7,
+      "price": 7,
+      "happyHourPrice": 5.6,
+      "icon": "🍺",
+      "currency": "EUR",
+      "active": true
+    },
+    {
+      "id": "pinte-ipa",
+      "name": "Pinte IPA",
+      "originalPrice": 8,
+      "price": 8,
+      "happyHourPrice": 6.4,
+      "icon": "🍻",
+      "currency": "EUR",
+      "active": true
+    },
+    {
+      "id": "soft",
+      "name": "Soft",
+      "originalPrice": 3.5,
+      "price": 3.5,
+      "happyHourPrice": 2.8,
+      "icon": "🥤",
+      "currency": "EUR",
+      "active": true
+    }
+  ],
+  "programItems": [
+    {
+      "id": "service-bar",
+      "icon": "🍽️",
+      "text": "Service au bar pendant tout le match",
+      "active": true,
+      "sortOrder": 1
+    },
+    {
+      "id": "happy-hour-buts",
+      "icon": "⚽",
+      "text": "But France = Happy hour 10mn",
+      "active": true,
+      "sortOrder": 2
+    },
+    {
+      "id": "offres-tv",
+      "icon": "📺",
+      "text": "Offres sur la télé et ecrans dans le restau",
+      "active": true,
+      "sortOrder": 3
+    }
+  ],
+  "eventBanners": [
+    {
+      "id": "happy-hour-bientot",
+      "text": "Gardez un oeil sur le score : Happy Hour a chaque but de la France.",
+      "active": true,
+      "sortOrder": 10
+    },
+    {
+      "id": "service-cocotte",
+      "text": "La Cocotte vous sert pendant tout le match.",
+      "active": true,
+      "sortOrder": 20
+    }
+  ],
+  "livelyMessages": [
+    {
+      "id": "allez-les-bleus",
+      "text": "Allez les Bleus, la Cocotte est avec vous.",
+      "active": true,
+      "sortOrder": 10
+    },
+    {
+      "id": "service-chaud",
+      "text": "Un but de la France et le bar passe en Happy Hour.",
+      "active": true,
+      "sortOrder": 20
+    },
+    {
+      "id": "champagne-orange",
+      "text": "Ambiance orange, verres prets, match lance.",
+      "active": true,
+      "sortOrder": 30
+    }
+  ],
+  "preMatch": {
+    "enabled": true,
+    "kickoffAt": "2026-06-03T22:00:00+02:00",
+    "homeFlag": "🇫🇷",
+    "awayFlag": "🇯🇵"
+  },
+  "match": {
+    "selectedMatchId": "france-custom-aaaaaaaaaaaaaaaaaaaaaah",
+    "matchStarted": true,
+    "matchMode": "simulation",
+    "scoreSource": "simulation",
+    "source": "simulation",
+    "provider": "manual",
+    "homeTeam": {
+      "name": "France",
+      "shortName": "FRA"
+    },
+    "awayTeam": {
+      "name": "AAAAAAAAAAAAAAAAAAAAAAH",
+      "shortName": "AAA"
+    },
+    "homeScore": 0,
+    "awayScore": 0
+  }
+}

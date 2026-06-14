@@ -87,7 +87,7 @@ async function submitSetup(event) {
     return;
   }
 
-  window.location.href = '/bar';
+  window.location.href = '/admin';
 }
 
 setupForm?.addEventListener('submit', (event) => {

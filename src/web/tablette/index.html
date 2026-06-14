@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cocotte Goal Happy Hour - Tablette</title>
+  <link rel="stylesheet" href="/tablette/tablette.css">
+</head>
+<body>
+  <main class="tablet-shell" aria-label="Affichage salle Cocotte">
+    <div class="confetti-layer" aria-hidden="true">
+      <span></span><span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span><span></span><span></span>
+    </div>
+    <section class="fullscreen-message" id="fullscreen-message" aria-live="assertive" hidden></section>
+    <p class="connection-status" id="connection-status" aria-live="polite">
+      <span class="connection-dot"></span>
+      <span id="connection-label">Connexion instable</span>
+    </p>
+    <section class="score-panel" aria-label="Score du match">
+      <p class="status-pill" id="match-status">Avant match</p>
+      <div class="score-line">
+        <div class="team team-home">
+          <span id="home-team">FRA</span>
+          <small id="home-team-name">France</small>
+        </div>
+        <div class="score-value">
+          <strong id="home-score">0</strong>
+          <span>-</span>
+          <strong id="away-score">0</strong>
+        </div>
+        <div class="team team-away">
+          <span id="away-team">ADV</span>
+          <small id="away-team-name">Adversaire</small>
+        </div>
+      </div>
+      <p class="match-title" id="match-title">France vs Adversaire</p>
+      <p class="event-banner" id="event-banner" aria-live="polite" hidden></p>
+    </section>
+
+    <section class="content-grid">
+      <article class="timer-panel" aria-label="Chrono happy hour">
+        <p class="panel-kicker">Happy Hour</p>
+        <h1 id="happy-hour-state">Inactive</h1>
+        <div class="timer-value" id="timer">0:00</div>
+        <p class="timer-note" id="timer-note">Le chrono s'affiche ici quand une offre est active.</p>
+        <p class="lively-message" id="lively-message" aria-live="polite">Chargement des messages...</p>
+      </article>
+
+      <article class="drinks-panel" aria-label="Carte boissons">
+        <div class="panel-heading">
+          <div>
+            <p class="panel-kicker">Carte Cocotte</p>
+            <h2>Boissons</h2>
+          </div>
+          <span id="discount-note">Prix bar</span>
+        </div>
+        <div class="drink-list" id="drink-list"></div>
+      </article>
+    </section>
+  </main>
+
+  <script type="module" src="/tablette/tablette.js"></script>
+</body>
+</html>
