@@ -19,18 +19,24 @@ export type MatchStatus =
 export type DisplayMatchInfo = {
   homeTeam: MatchTeam;
   awayTeam: MatchTeam;
+  homeTeamName: string | null;
+  awayTeamName: string | null;
   homeScore: number;
   awayScore: number;
   matchTitle: string;
   matchDescription: string;
+  kickoffAt: string | null;
 };
 
 export type DrinkMenuItem = {
   id: string;
   name: string;
+  originalPrice: number;
   price: number;
   happyHourPrice: number;
+  icon: string;
   currency: 'EUR';
+  active: boolean;
 };
 
 export type MenuData = {
@@ -39,10 +45,45 @@ export type MenuData = {
 };
 
 export type SpotifyPlaceholder = {
+  status: 'connected' | 'not_configured' | 'error' | 'no_playback';
   title: string;
   artist: string;
   albumArtUrl: string | null;
   isPlaying: boolean;
+  progressMs: number | null;
+  durationMs: number | null;
+  deviceName: string | null;
+};
+
+export type ProgramItem = {
+  id: string;
+  icon: string;
+  text: string;
+  active: boolean;
+  sortOrder: number;
+};
+
+export type LivelyMessage = {
+  id: string;
+  text: string;
+  active: boolean;
+  sortOrder: number;
+};
+
+export type EventBanner = {
+  id: string;
+  text: string;
+  active: boolean;
+  sortOrder: number;
+};
+
+export type PreMatchState = {
+  enabled: boolean;
+  kickoffAt: string;
+  programMessages: string[];
+  programItems: ProgramItem[];
+  homeFlag: string;
+  awayFlag: string;
 };
 
 export type DisplayStateV2 = {
@@ -50,9 +91,12 @@ export type DisplayStateV2 = {
   matchStatus: MatchStatus;
   happyHourActive: boolean;
   remainingSeconds: number;
+  preMatch: PreMatchState;
   matchInfo: DisplayMatchInfo;
   bannerMessage: string;
   fullscreenMessage: string;
+  eventBanners: EventBanner[];
+  livelyMessages: LivelyMessage[];
   drinks: DrinkMenuItem[];
   menu: MenuData;
   spotify: SpotifyPlaceholder;

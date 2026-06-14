@@ -9,44 +9,57 @@
 <body>
   <main class="salle-shell">
     <header class="salle-header">
-      <p class="eyebrow">Equipe salle</p>
-      <h1>Score match</h1>
-      <p class="match-name" id="match-full-name">France vs Unknown</p>
+      <div class="header-title">
+        <p class="eyebrow">Chef de rang</p>
+        <h1>Suivi salle</h1>
+        <p class="connection-status" id="connection-status">Connexion en cours</p>
+      </div>
+      <section class="mini-score" aria-label="Score du match">
+        <p class="match-name" id="match-full-name">France vs Unknown</p>
+        <div class="score-row">
+          <span class="team-name" id="home-team">FRA</span>
+          <strong class="team-score" id="home-score">0</strong>
+          <span class="score-separator">-</span>
+          <strong class="team-score" id="away-score">0</strong>
+          <span class="team-name" id="away-team">ADV</span>
+        </div>
+        <p class="match-status" id="match-status">Avant match</p>
+      </section>
     </header>
 
-    <section class="score-board" aria-label="Score du match">
-      <div class="team-block">
-        <span class="team-name" id="home-team">FRA</span>
-        <strong class="team-score" id="home-score">0</strong>
-      </div>
-      <span class="score-separator">-</span>
-      <div class="team-block team-away">
-        <span class="team-name" id="away-team">ADV</span>
-        <strong class="team-score" id="away-score">0</strong>
-      </div>
-    </section>
+    <section class="salle-grid">
+      <article class="status-panel" aria-label="Chrono Happy Hour">
+        <div class="status-line">
+          <span class="status-dot" id="status-dot"></span>
+          <span id="status-label">Connexion instable</span>
+        </div>
+        <div class="timer" id="timer">0:00</div>
+      </article>
 
-    <section class="status-panel" aria-label="Etat happy hour">
-      <div class="status-line">
-        <span class="status-dot" id="status-dot"></span>
-        <span id="status-label">Happy hour inactive</span>
-      </div>
-      <div class="timer" id="timer">0:00</div>
-    </section>
+      <article class="staff-actions" aria-label="Actions score salle">
+        <div class="lock-panel" aria-live="polite">
+          <p id="score-lock-notice">Score modifiable</p>
+          <p id="undo-status">Aucune action annulable</p>
+          <p class="action-status" id="action-status">Pret</p>
+        </div>
+        <div class="goal-actions">
+          <button class="goal-button home-goal" id="home-goal-button" type="button">But France</button>
+          <button class="goal-button away-goal" id="away-goal-button" type="button">But adversaire</button>
+          <button class="goal-button neutral-action" id="home-minus-button" type="button">-1 France</button>
+          <button class="goal-button neutral-action" id="away-minus-button" type="button">-1 adversaire</button>
+          <button class="undo-button" id="undo-last-button" type="button">Annuler derniere action</button>
+          <button class="undo-button danger-action" id="reset-score-button" type="button">Reset score</button>
+        </div>
+      </article>
 
-    <section class="lock-panel" aria-live="polite">
-      <p id="score-lock-notice">Score modifiable</p>
-      <p id="undo-status">Aucune action annulable</p>
-      <p class="action-status" id="action-status">Prêt</p>
+      <article class="drinks-panel" aria-label="Carte boissons">
+        <div class="panel-heading">
+          <p class="eyebrow">Carte Cocotte</p>
+          <span id="drinks-note">Prix normal / Happy Hour</span>
+        </div>
+        <div class="drink-list" id="drink-list"></div>
+      </article>
     </section>
-
-    <section class="goal-actions" aria-label="Actions score">
-      <button class="goal-button home-goal" id="home-goal-button" type="button">But France</button>
-      <button class="goal-button away-goal" id="away-goal-button" type="button">But adversaire</button>
-      <button class="undo-button" id="undo-last-button" type="button">Annuler dernière action</button>
-    </section>
-
-    <p class="connection-status" id="connection-status">Connexion en cours</p>
   </main>
 
   <script src="/salle/salle.js" defer></script>
