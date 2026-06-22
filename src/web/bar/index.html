@@ -1,77 +1,342 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Cocotte Goal Happy Hour - Bar</title>
-  <link rel="stylesheet" href="/bar/bar.css">
+  <title>Cocotte Goal Happy Hour - Admin</title>
+  <link rel="stylesheet" href="/admin/bar.css">
 </head>
 <body>
-  <main class="bar-shell">
-    <header class="bar-header">
-      <div>
-        <p class="eyebrow">Console administrateur</p>
-        <h1>Cocotte Goal Happy Hour</h1>
-      </div>
-      <nav class="header-actions" aria-label="Navigation admin">
+  <main class="bar-dashboard">
+    <aside class="regie-sidebar" aria-label="Navigation admin">
+      <div class="sidebar-brand">
+        <p class="eyebrow">Admin bar</p>
+        <h1>Cocotte</h1>
         <span class="source-badge" id="source-badge">MATCH SIMULE</span>
-        <button class="audio-toggle" id="audio-toggle-button" type="button">Activer les alertes sonores</button>
-        <a class="setup-link" href="/bar/setup">Retour setup</a>
+      </div>
+      <nav class="section-nav">
+        <button class="nav-item active" type="button" data-section-target="overview">Vue générale</button>
+        <button class="nav-item" type="button" data-section-target="pre-match">Diffusion & contenus</button>
+        <button class="nav-item" type="button" data-section-target="drinks">Boissons</button>
+        <button class="nav-item nav-item-music" type="button" data-section-target="music">
+          <span class="spotify-nav-copy">
+            <strong>Musique</strong>
+            <small id="spotify-nav-status">Statut Spotify</small>
+          </span>
+        </button>
+        <button class="nav-item" type="button" data-section-target="system">Etat systeme</button>
       </nav>
-    </header>
-
-    <div class="audio-alert-banner" id="audio-alert-banner" aria-live="polite" hidden>
-      Happy hour démarrée
-    </div>
-
-    <section class="score-card" aria-label="Score du match">
-      <div class="team">
-        <span class="team-name" id="home-team">FRA</span>
-        <span class="team-score" id="home-score">0</span>
+      <div class="sidebar-actions">
+        <button class="audio-toggle" id="audio-toggle-button" type="button">Activer les alertes sonores</button>
+        <a class="setup-link" href="/tablette" target="_blank" rel="noreferrer">Ouvrir tablette</a>
+        <a class="setup-link" href="/admin/setup">Retour setup</a>
       </div>
-      <div class="score-separator">-</div>
-      <div class="team team-away">
-        <span class="team-score" id="away-score">0</span>
-        <span class="team-name" id="away-team">ADV</span>
-      </div>
-      <p class="match-full-name" id="match-full-name">France vs Unknown</p>
-    </section>
+    </aside>
 
-    <section class="status-card" aria-label="Etat happy hour">
-      <div class="status-topline">
-        <div class="status-row">
-          <span class="status-dot" id="status-dot"></span>
-          <span id="status-label">Happy hour inactive</span>
+    <section class="regie-workspace">
+      <header class="bar-header">
+        <div>
+          <p class="eyebrow">Console administrateur</p>
+          <h2 id="current-section-title">Vue générale</h2>
         </div>
-        <span class="status-note">Override manuel</span>
-      </div>
-      <div class="timer" id="timer">10:00</div>
-    </section>
+        <div class="header-status">
+          <span class="status-dot" id="status-dot"></span>
+          <span id="status-label">Connexion instable</span>
+        </div>
+      </header>
 
-    <section class="actions" aria-label="Commandes happy hour">
-      <button class="action-button start" id="start-button" type="button">Lancer</button>
-      <button class="action-button reset" id="reset-button" type="button">Reset 10:00</button>
-      <button class="action-button stop" id="stop-button" type="button">Stop</button>
-    </section>
+      <div class="audio-alert-banner" id="audio-alert-banner" aria-live="polite" hidden>
+        Happy hour demarree
+      </div>
 
-    <section class="simulation-card" aria-label="Simulation du score">
-      <div>
-        <p class="eyebrow">Simulation match</p>
-        <h2>Contrôle du score</h2>
-      </div>
-      <div class="simulation-actions">
-        <button class="simulation-button home-goal" id="home-goal-button" type="button">France +1</button>
-        <button class="simulation-button away-goal" id="away-goal-button" type="button">Adversaire +1</button>
-        <button class="simulation-button undo-last" id="undo-last-button" type="button">Annuler dernière action</button>
-        <button class="simulation-button reset-score" id="reset-score-button" type="button">Reset score</button>
-      </div>
-      <div class="score-lock-panel" aria-live="polite">
-        <p id="score-lock-notice">Score modifiable</p>
-        <p id="undo-status">Aucune action annulable</p>
-      </div>
+      <section class="dashboard-section active" data-section="overview" aria-label="Vue générale">
+        <div class="overview-stack">
+          <article class="control-card overview-match-card">
+            <div>
+              <p class="eyebrow">Pilotage rapide du match</p>
+              <h3>Phase de jeu</h3>
+            </div>
+            <div class="match-control-actions">
+              <button class="control-button neutral" data-pre-match-activate type="button">Avant-match</button>
+              <button class="control-button primary" id="match-start-button" type="button">1ère mi-temps</button>
+              <button class="control-button warning" id="match-half-time-button" type="button">Pause mi-temps</button>
+              <button class="control-button primary" id="match-resume-button" type="button">2e mi-temps</button>
+              <button class="control-button danger" id="match-finish-button" type="button">Fin du match</button>
+            </div>
+          </article>
+
+          <div class="overview-row two-columns">
+            <article class="score-card" aria-label="Score des equipes">
+              <div class="team">
+                <span class="team-name" id="home-team">FRA</span>
+                <span class="team-score" id="home-score">0</span>
+              </div>
+              <div class="score-separator">-</div>
+              <div class="team team-away">
+                <span class="team-score" id="away-score">0</span>
+                <span class="team-name" id="away-team">ADV</span>
+              </div>
+              <p class="match-full-name" id="match-full-name">France vs Unknown</p>
+            </article>
+
+            <article class="control-card quick-control-card">
+              <div>
+                <p class="eyebrow">Score</p>
+                <h3>Corrections rapides</h3>
+              </div>
+              <div class="score-control-actions">
+                <button class="simulation-button home-goal" id="score-home-plus-button" type="button">+1 domicile</button>
+                <button class="simulation-button undo-last" id="score-home-minus-button" type="button">-1 domicile</button>
+                <button class="simulation-button away-goal" id="score-away-plus-button" type="button">+1 exterieur</button>
+                <button class="simulation-button undo-last" id="score-away-minus-button" type="button">-1 exterieur</button>
+                <button class="simulation-button reset-score wide-action" id="reset-score-button" type="button">Reset score</button>
+              </div>
+              <div class="score-lock-panel" aria-live="polite">
+                <p id="score-lock-notice">Score modifiable</p>
+                <p id="undo-status">Aucune action annulable</p>
+              </div>
+            </article>
+          </div>
+
+          <div class="overview-row two-columns">
+            <article class="status-card" aria-label="Chrono Happy Hour">
+              <div class="status-topline">
+                <div>
+                  <p class="eyebrow">Happy Hour</p>
+                  <h3>Chrono</h3>
+                </div>
+                <span class="status-note">Service bar</span>
+              </div>
+              <div class="timer" id="timer">0:00</div>
+            </article>
+
+            <article class="control-card quick-control-card">
+              <div>
+                <p class="eyebrow">Happy Hour</p>
+                <h3>Controles</h3>
+              </div>
+              <section class="actions" aria-label="Commandes happy hour">
+                <button class="action-button start" id="start-button" type="button">Lancer Happy Hour</button>
+                <button class="action-button reset" id="reset-button" type="button">Reset a 5 minutes</button>
+                <button class="action-button stop" id="stop-button" type="button">Stop Happy Hour</button>
+              </section>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="dashboard-section" data-section="pre-match" aria-label="Diffusion et contenus" hidden>
+        <div class="section-grid pre-match-layout">
+          <article class="control-card pre-match-summary-card">
+            <div class="card-heading-row">
+              <div>
+                <p class="eyebrow">Avant-match</p>
+                <h3>Ecran salle</h3>
+              </div>
+              <button class="control-button neutral compact-button" data-pre-match-activate type="button">Activer</button>
+            </div>
+            <div class="pre-match-summary">
+              <div class="summary-teams">
+                <div>
+                  <strong id="pre-match-summary-home-team">France</strong>
+                </div>
+                <em>VS</em>
+                <div>
+                  <strong id="pre-match-summary-away-team">Adversaire</strong>
+                </div>
+              </div>
+              <dl class="summary-meta">
+                <div>
+                  <dt>Coup d'envoi</dt>
+                  <dd id="pre-match-summary-kickoff">Non renseigne</dd>
+                </div>
+                <div>
+                  <dt>Etat</dt>
+                  <dd id="pre-match-summary-enabled">Actif</dd>
+                </div>
+              </dl>
+              <ul class="program-summary-list" id="pre-match-summary-program"></ul>
+            </div>
+            <button class="control-button neutral" id="pre-match-deactivate-button" type="button">Desactiver l'ecran avant-match</button>
+          </article>
+
+          <article class="control-card pre-match-card">
+              <div>
+                <p class="eyebrow">Configuration</p>
+                <h3>Coup d'envoi</h3>
+              </div>
+            <div class="pre-match-form">
+              <label class="message-field">
+                <span>Coup d'envoi</span>
+                <input id="pre-match-kickoff-input" type="datetime-local">
+              </label>
+              <button class="control-button primary wide-action" id="pre-match-save-button" type="button">Sauvegarder</button>
+            </div>
+            <p class="message-status" id="pre-match-status" aria-live="polite">Configuration avant-match prete</p>
+          </article>
+
+          <article class="control-card program-control-card">
+            <div class="card-heading-row">
+              <div>
+                <p class="eyebrow">Programme</p>
+                <h3>Au programme</h3>
+              </div>
+              <div class="compact-actions">
+                <button class="control-button primary compact-button" id="add-program-button" type="button">Ajouter</button>
+                <button class="control-button neutral compact-button" id="save-program-button" type="button">Sauver</button>
+              </div>
+            </div>
+            <div class="program-editor" id="program-editor"></div>
+            <p class="message-status" id="program-status" aria-live="polite">Programme pret.</p>
+          </article>
+
+          <article class="control-card event-banner-control-card">
+            <div class="card-heading-row">
+              <div>
+                <p class="eyebrow">Bannieres evenementielles</p>
+                <h3>Messages de diffusion</h3>
+              </div>
+              <div class="compact-actions">
+                <button class="control-button primary compact-button" id="add-event-banner-button" type="button">Ajouter</button>
+                <button class="control-button neutral compact-button" id="save-event-banners-button" type="button">Sauver</button>
+              </div>
+            </div>
+            <button class="control-button warning" id="show-random-banner-button" type="button">Afficher une banniere aleatoire maintenant</button>
+            <div class="event-banner-editor" id="event-banner-editor"></div>
+            <p class="message-status" id="event-banner-status" aria-live="polite">Bannieres pretes.</p>
+          </article>
+
+          <article class="control-card fullscreen-control-card">
+            <div>
+              <p class="eyebrow">Message plein ecran</p>
+              <h3>Affichage spontané</h3>
+            </div>
+            <div class="message-form fullscreen-form">
+              <label class="message-field">
+                <span>Message plein ecran</span>
+                <input id="fullscreen-message-input" type="text" maxlength="320" placeholder="Message prioritaire plein ecran">
+              </label>
+              <button class="control-button primary" id="show-fullscreen-button" type="button">Afficher maintenant</button>
+              <button class="control-button neutral wide-action" id="clear-messages-button" type="button">Effacer message</button>
+            </div>
+            <p class="message-status" id="display-message-status" aria-live="polite">Aucun message plein ecran actif</p>
+          </article>
+
+          <article class="control-card lively-control-card">
+            <div class="card-heading-row">
+              <div>
+                <p class="eyebrow">Messages vivants</p>
+                <h3>Ambiance tablette</h3>
+              </div>
+              <div class="compact-actions">
+                <button class="control-button primary compact-button" id="add-lively-message-button" type="button">Ajouter</button>
+                <button class="control-button neutral compact-button" id="save-lively-messages-button" type="button">Sauver</button>
+              </div>
+            </div>
+            <div class="lively-editor" id="lively-editor"></div>
+            <p class="message-status" id="lively-status" aria-live="polite">Messages vivants prets.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="dashboard-section" data-section="drinks" aria-label="Boissons" hidden>
+        <article class="control-card drinks-control-card">
+          <div class="card-heading-row">
+            <div>
+              <p class="eyebrow">Boissons</p>
+              <h3>Carte et prix</h3>
+            </div>
+            <div class="compact-actions">
+              <button class="control-button primary compact-button" id="add-drink-button" type="button">Ajouter</button>
+              <button class="control-button neutral compact-button" id="save-drinks-button" type="button">Sauver</button>
+            </div>
+          </div>
+          <div class="drink-editor" id="drink-editor"></div>
+          <p class="message-status" id="drinks-status" aria-live="polite">Carte prete.</p>
+        </article>
+      </section>
+
+      <section class="dashboard-section" data-section="music" aria-label="Musique" hidden>
+        <article class="control-card music-card" aria-live="polite">
+          <div>
+            <p class="eyebrow">Musique actuelle</p>
+            <h3>Spotify</h3>
+          </div>
+          <dl class="music-metrics">
+            <div>
+              <dt>Statut</dt>
+              <dd id="spotify-status-value">Non configure</dd>
+            </div>
+            <div>
+              <dt>Titre</dt>
+              <dd id="spotify-title-value">-</dd>
+            </div>
+            <div>
+              <dt>Artiste</dt>
+              <dd id="spotify-artist-value">-</dd>
+            </div>
+            <div>
+              <dt>Lecture</dt>
+              <dd id="spotify-playing-value">Non</dd>
+            </div>
+            <div>
+              <dt>Progression</dt>
+              <dd id="spotify-progress-value">-</dd>
+            </div>
+            <div>
+              <dt>Appareil</dt>
+              <dd id="spotify-device-value">-</dd>
+            </div>
+          </dl>
+          <a class="control-button primary spotify-connect-link" id="spotify-connect-link" href="/api/spotify/login" target="_blank" rel="noreferrer">Connecter Spotify</a>
+        </article>
+      </section>
+
+      <section class="dashboard-section" data-section="system" aria-label="Etat systeme" hidden>
+        <article class="control-card tv-mode-card" aria-live="polite">
+          <div>
+            <p class="eyebrow">Etat systeme</p>
+            <h3>Contrat API V2</h3>
+          </div>
+          <dl class="state-metrics">
+            <div>
+              <dt>displayMode</dt>
+              <dd id="display-mode-value">PRE_MATCH</dd>
+            </div>
+            <div>
+              <dt>matchStatus</dt>
+              <dd id="match-status-value">NOT_STARTED</dd>
+            </div>
+            <div>
+              <dt>happyHourActive</dt>
+              <dd id="happy-hour-active-value">false</dd>
+            </div>
+            <div>
+              <dt>remainingSeconds</dt>
+              <dd id="remaining-seconds-value">0</dd>
+            </div>
+            <div>
+              <dt>Score</dt>
+              <dd id="current-score-value">0 - 0</dd>
+            </div>
+            <div>
+              <dt>URL serveur</dt>
+              <dd id="server-url-value">Chargement</dd>
+            </div>
+            <div>
+              <dt>PUBLIC_BASE_URL</dt>
+              <dd id="server-public-url-status">Non configure</dd>
+            </div>
+            <div>
+              <dt>Liens rapides</dt>
+              <dd id="server-quick-links">Chargement</dd>
+            </div>
+          </dl>
+        </article>
+      </section>
     </section>
   </main>
 
-  <script type="module" src="/bar/bar.js"></script>
+  <script type="module" src="/admin/bar.js"></script>
 </body>
 </html>
