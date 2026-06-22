@@ -6,6 +6,7 @@ Application locale pour declencher une happy hour pendant les matchs de la Franc
 
 - `/admin` : tableau de bord administrateur.
 - `/bar` : redirige vers `/admin` pour compatibilite.
+- `/salle` : pilotage simplifie en salle.
 - `/tablette` : affichage salle simplifie pour iPad/tablette.
 - `/tv` : alias temporaire redirige vers `/tablette`.
 

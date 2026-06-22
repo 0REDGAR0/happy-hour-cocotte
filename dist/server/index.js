@@ -51,7 +51,7 @@ const spotifyPlaceholder = {
 let spotifyState = spotifyPlaceholder;
 const defaultPreMatchProgramMessages = [
     'Service au bar pendant tout le match',
-    '10 minutes de Happy Hour Ã  chaque but de la France',
+    '5 minutes de Happy Hour Ã  chaque but de la France',
     'Les offres sâ€™affichent automatiquement sur la TV',
 ];
 const persistedPreMatch = getPreMatchConfig();
@@ -60,7 +60,9 @@ const state = {
     displayMode: 'PRE_MATCH',
     matchStatus: 'NOT_STARTED',
     happyHourActive: false,
+    happyHourDurationSeconds: config.happyHourDurationSeconds,
     remainingSeconds: 0,
+    happyHourEndsAt: null,
     scoreLockActive: false,
     scoreLockRemainingSeconds: 0,
     canUndoLastAction: false,
@@ -280,6 +282,10 @@ function getState() {
     return {
         ...state,
         displayMode: getDisplayMode(),
+        happyHourDurationSeconds: config.happyHourDurationSeconds,
+        happyHourEndsAt: state.happyHourActive
+            ? new Date(Date.now() + Math.max(0, state.remainingSeconds) * 1000).toISOString()
+            : null,
         scoreLockActive,
         scoreLockRemainingSeconds,
         canUndoLastAction: scoreLockActive && lastScoreAction !== null,

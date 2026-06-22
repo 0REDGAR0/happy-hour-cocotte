@@ -117,7 +117,7 @@
               </div>
               <section class="actions" aria-label="Commandes happy hour">
                 <button class="action-button start" id="start-button" type="button">Lancer Happy Hour</button>
-                <button class="action-button reset" id="reset-button" type="button">Reset a 10 minutes</button>
+                <button class="action-button reset" id="reset-button" type="button">Reset a 5 minutes</button>
                 <button class="action-button stop" id="stop-button" type="button">Stop Happy Hour</button>
               </section>
             </article>
@@ -138,12 +138,10 @@
             <div class="pre-match-summary">
               <div class="summary-teams">
                 <div>
-                  <span id="pre-match-summary-home-flag">FR</span>
                   <strong id="pre-match-summary-home-team">France</strong>
                 </div>
                 <em>VS</em>
                 <div>
-                  <span id="pre-match-summary-away-flag">ADV</span>
                   <strong id="pre-match-summary-away-team">Adversaire</strong>
                 </div>
               </div>
@@ -163,22 +161,14 @@
           </article>
 
           <article class="control-card pre-match-card">
-            <div>
-              <p class="eyebrow">Configuration</p>
-              <h3>Coup d'envoi & drapeaux</h3>
-            </div>
+              <div>
+                <p class="eyebrow">Configuration</p>
+                <h3>Coup d'envoi</h3>
+              </div>
             <div class="pre-match-form">
               <label class="message-field">
                 <span>Coup d'envoi</span>
                 <input id="pre-match-kickoff-input" type="datetime-local">
-              </label>
-              <label class="message-field">
-                <span>Drapeau domicile</span>
-                <input id="pre-match-home-flag-input" type="text" maxlength="8" placeholder="FR">
-              </label>
-              <label class="message-field">
-                <span>Drapeau exterieur</span>
-                <input id="pre-match-away-flag-input" type="text" maxlength="8" placeholder="ADV">
               </label>
               <button class="control-button primary wide-action" id="pre-match-save-button" type="button">Sauvegarder</button>
             </div>

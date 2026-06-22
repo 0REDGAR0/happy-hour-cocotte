@@ -20,11 +20,9 @@ const emptyState = {
     kickoffAt: '',
     programMessages: [
       'Service au bar pendant tout le match',
-      '10 minutes de Happy Hour à chaque but de la France',
+      '5 minutes de Happy Hour à chaque but de la France',
       'Les offres s’affichent automatiquement sur la TV',
     ],
-    homeFlag: '🇫🇷',
-    awayFlag: '🇩🇪',
   },
   spotify: {
     status: 'not_configured',
@@ -86,13 +84,9 @@ const matchFinishButton = element('#match-finish-button');
 const preMatchActivateButtons = Array.from(document.querySelectorAll('[data-pre-match-activate]'));
 const preMatchDeactivateButton = element('#pre-match-deactivate-button');
 const preMatchKickoffInput = element('#pre-match-kickoff-input');
-const preMatchHomeFlagInput = element('#pre-match-home-flag-input');
-const preMatchAwayFlagInput = element('#pre-match-away-flag-input');
 const preMatchProgramInputs = Array.from(document.querySelectorAll('.pre-match-program-input'));
 const preMatchSaveButton = element('#pre-match-save-button');
 const preMatchStatus = element('#pre-match-status');
-const preMatchSummaryHomeFlag = element('#pre-match-summary-home-flag');
-const preMatchSummaryAwayFlag = element('#pre-match-summary-away-flag');
 const preMatchSummaryHomeTeam = element('#pre-match-summary-home-team');
 const preMatchSummaryAwayTeam = element('#pre-match-summary-away-team');
 const preMatchSummaryKickoff = element('#pre-match-summary-kickoff');
@@ -618,16 +612,12 @@ function renderPreMatchState(state = emptyState) {
 
   if (!preMatchFormDirty) {
     preMatchKickoffInput.value = toDateTimeLocalValue(preMatch.kickoffAt || '');
-    preMatchHomeFlagInput.value = preMatch.homeFlag || emptyState.preMatch.homeFlag;
-    preMatchAwayFlagInput.value = preMatch.awayFlag || emptyState.preMatch.awayFlag;
 
     preMatchProgramInputs.forEach((input, index) => {
       input.value = messages[index] || '';
     });
   }
 
-  preMatchSummaryHomeFlag.textContent = preMatch.homeFlag || emptyState.preMatch.homeFlag;
-  preMatchSummaryAwayFlag.textContent = preMatch.awayFlag || emptyState.preMatch.awayFlag;
   preMatchSummaryHomeTeam.textContent = getTeamName(state.homeTeam);
   preMatchSummaryAwayTeam.textContent = getTeamName(state.awayTeam);
   preMatchSummaryKickoff.textContent = formatKickoff(preMatch.kickoffAt || '');
@@ -1415,8 +1405,6 @@ async function savePreMatchConfig() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         kickoffAt: toOffsetDateTime(preMatchKickoffInput.value),
-        homeFlag: preMatchHomeFlagInput.value.trim(),
-        awayFlag: preMatchAwayFlagInput.value.trim(),
       }),
     });
   } catch {
@@ -1572,8 +1560,6 @@ preMatchSaveButton.addEventListener('click', () => {
 
 [
   preMatchKickoffInput,
-  preMatchHomeFlagInput,
-  preMatchAwayFlagInput,
   ...preMatchProgramInputs,
 ].forEach((input) => {
   input.addEventListener('input', () => {

@@ -242,6 +242,7 @@ function renderState(incomingState = emptyState) {
 }
 function renderConnectionLost() {
     markStateConnectionProblem();
+    document.body.classList.remove('happy-hour-active');
     matchStatus.textContent = 'Connexion serveur perdue';
     renderDrinkLoadError();
 }

@@ -35,15 +35,15 @@
   "programItems": [
     {
       "id": "service-bar",
-      "icon": "🍽️",
-      "text": "Service au bar pendant tout le match",
+      "icon": "🍻",
+      "text": "Happy hour = Service au bar",
       "active": true,
       "sortOrder": 1
     },
     {
       "id": "happy-hour-buts",
       "icon": "⚽",
-      "text": "But France = Happy hour 10mn",
+      "text": "But France = Happy hour 5mn",
       "active": true,
       "sortOrder": 2
     },
@@ -90,13 +90,13 @@
     }
   ],
   "preMatch": {
-    "enabled": true,
-    "kickoffAt": "2026-06-03T22:00:00+02:00",
+    "enabled": false,
+    "kickoffAt": "2026-06-22T23:00:00+02:00",
     "homeFlag": "🇫🇷",
     "awayFlag": "🇯🇵"
   },
   "match": {
-    "selectedMatchId": "france-custom-aaaaaaaaaaaaaaaaaaaaaah",
+    "selectedMatchId": "france-custom-iraq",
     "matchStarted": true,
     "matchMode": "simulation",
     "scoreSource": "simulation",
@@ -107,8 +107,8 @@
       "shortName": "FRA"
     },
     "awayTeam": {
-      "name": "AAAAAAAAAAAAAAAAAAAAAAH",
-      "shortName": "AAA"
+      "name": "IRAQ",
+      "shortName": "IRA"
     },
     "homeScore": 0,
     "awayScore": 0
