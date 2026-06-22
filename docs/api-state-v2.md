@@ -38,7 +38,9 @@ Exemple de reponse simplifiee :
   "displayMode": "PRE_MATCH",
   "matchStatus": "NOT_STARTED",
   "happyHourActive": false,
+  "happyHourDurationSeconds": 300,
   "remainingSeconds": 0,
+  "happyHourEndsAt": null,
   "preMatch": {
     "enabled": true,
     "kickoffAt": "2026-06-14T21:00:00+02:00",
@@ -135,6 +137,12 @@ Exemple de reponse simplifiee :
 qui veulent soit une liste directe, soit un bloc menu extensible. Seules les
 boissons actives sont exposees dans `/api/state`.
 
+La duree Happy Hour standard est de 5 minutes, exposee via
+`happyHourDurationSeconds = 300`. Pendant une Happy Hour, `remainingSeconds`
+indique le temps restant et `happyHourEndsAt` expose l'heure de fin estimee en
+ISO 8601 UTC. Hors Happy Hour, `remainingSeconds` vaut `0` et
+`happyHourEndsAt` vaut `null`.
+
 `price` reste un alias compatible de `originalPrice`. Les nouveaux clients
 doivent lire `originalPrice`, `happyHourPrice`, `icon` et `active`.
 
@@ -210,7 +218,7 @@ carte active dans `drinks` et `menu.drinks`.
   - Renvoie toutes les lignes de programme, actives ou non.
 
 - `POST /api/program`
-  - Body JSON : `{ "icon": "⚽", "text": "10 minutes de Happy Hour", "active": true, "sortOrder": 20 }`.
+  - Body JSON : `{ "icon": "⚽", "text": "5 minutes de Happy Hour", "active": true, "sortOrder": 20 }`.
   - Ajoute une ligne de programme persistante.
 
 - `PUT /api/program/:id`
@@ -323,3 +331,21 @@ Les endpoints existants restent disponibles :
 
 Le mode simulation continue a modifier `homeScore`, `awayScore`,
 `happyHourActive` et `remainingSeconds` comme avant.
+
+## Champs recommandes pour overlay Android
+
+Pour l'overlay Android, lire en priorite :
+
+- `displayMode` pour choisir l'ecran a rendre.
+- `matchStatus`, `matchTitle` et `matchInfo.matchDescription` pour l'etat du match.
+- `matchInfo.homeTeamName` et `matchInfo.awayTeamName` pour les noms affichables.
+- `matchInfo.kickoffAt` pour le compte a rebours normalise.
+- `preMatch.kickoffAt` pour compatibilite historique avec l'ancienne source.
+- `drinks` ou `menu.drinks` pour `name`, `originalPrice`, `happyHourPrice`, `icon`, `currency` et `active`.
+- `preMatch.programItems` pour le programme avec `text` et `icon`.
+- `spotify` pour le statut musique, le titre, l'artiste, la progression, la duree et l'appareil.
+- `happyHourActive`, `happyHourDurationSeconds`, `remainingSeconds` et `happyHourEndsAt` pour l'etat Happy Hour.
+
+Si un champ attendu est absent ou invalide, l'overlay doit afficher un etat
+visible d'erreur ou de chargement. Il ne doit pas inventer de match, de date, de
+boisson, de programme ou de morceau Spotify.

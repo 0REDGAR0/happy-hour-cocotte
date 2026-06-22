@@ -90,7 +90,9 @@ export type DisplayStateV2 = {
   displayMode: DisplayMode;
   matchStatus: MatchStatus;
   happyHourActive: boolean;
+  happyHourDurationSeconds: number;
   remainingSeconds: number;
+  happyHourEndsAt: string | null;
   preMatch: PreMatchState;
   matchInfo: DisplayMatchInfo;
   bannerMessage: string;

@@ -85,7 +85,7 @@ const defaultContent = {
         {
             id: 'happy-hour-buts',
             icon: '⚽',
-            text: '10 minutes de Happy Hour a chaque but de la France',
+            text: '5 minutes de Happy Hour a chaque but de la France',
             active: true,
             sortOrder: 20,
         },
