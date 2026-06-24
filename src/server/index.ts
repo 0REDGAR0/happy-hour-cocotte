@@ -45,8 +45,11 @@ import type {
   DisplayMode,
   DisplayStateV2,
   DrinkMenuItem,
+  HappyHourAnnouncement,
   MatchStatus,
   PreMatchState,
+  SoundboxEvent,
+  SoundboxEventType,
   SpotifyPlaceholder,
 } from '../types/display-state.js';
 import type { MatchMode, MatchProvider, MatchTeam, ScoreSource } from '../types/match.js';
@@ -64,6 +67,8 @@ type PublicState = {
   happyHourDurationSeconds: number;
   remainingSeconds: number;
   happyHourEndsAt: string | null;
+  happyHourAnnouncement: HappyHourAnnouncement | null;
+  soundboxEvent: SoundboxEvent | null;
   scoreLockActive: boolean;
   scoreLockRemainingSeconds: number;
   canUndoLastAction: boolean;
@@ -111,6 +116,10 @@ type SelectApiMatchBody = {
 type DisplayMessageBody = {
   message?: string;
   text?: string;
+};
+
+type SoundboxPlayBody = {
+  type?: unknown;
 };
 
 type SpotifyCallbackQuery = {
@@ -178,6 +187,32 @@ const spotifyService = new SpotifyService(config.spotifyRedirectUri);
 let cachedFranceApiMatches: FranceMatchCandidate[] = [];
 
 const happyHourDiscountRate = 0.2;
+const happyHourOffer = {
+  name: 'Pinte de bière',
+  originalPrice: 9,
+  happyHourPrice: 4,
+  currency: 'EUR' as const,
+};
+const happyHourAnnouncementDurationSeconds = 5;
+const soundboxEventDurationSeconds = 5;
+const soundboxEvents: Record<SoundboxEventType, { label: string; asset: string }> = {
+  horn: {
+    label: 'Klaxon',
+    asset: 'horn',
+  },
+  whistle: {
+    label: 'Sifflet',
+    asset: 'whistle',
+  },
+  cheer: {
+    label: 'Ambiance',
+    asset: 'cheer',
+  },
+  goal: {
+    label: 'Goal',
+    asset: 'goal',
+  },
+};
 await initializePersistentContent();
 
 const spotifyPlaceholder: SpotifyPlaceholder = {
@@ -194,8 +229,8 @@ let spotifyState: SpotifyPlaceholder = spotifyPlaceholder;
 
 const defaultPreMatchProgramMessages = [
   'Service au bar pendant tout le match',
-  '5 minutes de Happy Hour Ã  chaque but de la France',
-  'Les offres sâ€™affichent automatiquement sur la TV',
+  '5 minutes de Happy Hour à chaque but de la France',
+  'La pinte de bière est à 4€ au lieu de 9€',
 ];
 
 const persistedPreMatch = getPreMatchConfig();
@@ -208,6 +243,8 @@ const state: PublicState = {
   happyHourDurationSeconds: config.happyHourDurationSeconds,
   remainingSeconds: 0,
   happyHourEndsAt: null,
+  happyHourAnnouncement: null,
+  soundboxEvent: null,
   scoreLockActive: false,
   scoreLockRemainingSeconds: 0,
   canUndoLastAction: false,
@@ -268,6 +305,9 @@ const eventBannerDisplayDurationMs = 15000;
 let scoreLockUntil = 0;
 let lastScoreAction: LastScoreAction | null = null;
 let eventBannerClearTimeout: NodeJS.Timeout | null = null;
+let happyHourAnnouncementClearTimeout: NodeJS.Timeout | null = null;
+let soundboxEventClearTimeout: NodeJS.Timeout | null = null;
+let soundboxEventSequence = 0;
 
 function getLocalNetworkUrls(port = config.appPort): string[] {
   const urls: string[] = [];
@@ -413,6 +453,90 @@ async function persistCurrentMatchInfo(): Promise<void> {
   });
 }
 
+function clearHappyHourAnnouncement(shouldBroadcast = false): void {
+  if (happyHourAnnouncementClearTimeout) {
+    clearTimeout(happyHourAnnouncementClearTimeout);
+    happyHourAnnouncementClearTimeout = null;
+  }
+
+  state.happyHourAnnouncement = null;
+
+  if (shouldBroadcast) {
+    broadcastState();
+  }
+}
+
+function triggerHappyHourAnnouncement(): void {
+  const startedAtMs = Date.now();
+  const expiresAtMs = startedAtMs + happyHourAnnouncementDurationSeconds * 1000;
+
+  if (happyHourAnnouncementClearTimeout) {
+    clearTimeout(happyHourAnnouncementClearTimeout);
+  }
+
+  state.happyHourAnnouncement = {
+    id: `happy-hour-${startedAtMs}`,
+    active: true,
+    title: 'HAPPY HOUR',
+    message: 'La pinte est à 4€ au lieu de 9€',
+    offerName: happyHourOffer.name,
+    originalPrice: happyHourOffer.originalPrice,
+    happyHourPrice: happyHourOffer.happyHourPrice,
+    currency: happyHourOffer.currency,
+    startedAt: new Date(startedAtMs).toISOString(),
+    expiresAt: new Date(expiresAtMs).toISOString(),
+    durationSeconds: happyHourAnnouncementDurationSeconds,
+  };
+
+  happyHourAnnouncementClearTimeout = setTimeout(() => {
+    clearHappyHourAnnouncement(true);
+  }, happyHourAnnouncementDurationSeconds * 1000);
+}
+
+function clearSoundboxEvent(shouldBroadcast = false): void {
+  if (soundboxEventClearTimeout) {
+    clearTimeout(soundboxEventClearTimeout);
+    soundboxEventClearTimeout = null;
+  }
+
+  state.soundboxEvent = null;
+
+  if (shouldBroadcast) {
+    broadcastState();
+  }
+}
+
+function isSoundboxEventType(value: unknown): value is SoundboxEventType {
+  return typeof value === 'string' && Object.hasOwn(soundboxEvents, value);
+}
+
+function createSoundboxEvent(type: SoundboxEventType): SoundboxEvent {
+  const soundboxConfig = soundboxEvents[type];
+  const startedAtMs = Date.now();
+  const expiresAtMs = startedAtMs + soundboxEventDurationSeconds * 1000;
+  soundboxEventSequence += 1;
+
+  if (soundboxEventClearTimeout) {
+    clearTimeout(soundboxEventClearTimeout);
+  }
+
+  const event: SoundboxEvent = {
+    id: `soundbox-${startedAtMs}-${soundboxEventSequence}`,
+    type,
+    label: soundboxConfig.label,
+    asset: soundboxConfig.asset,
+    startedAt: new Date(startedAtMs).toISOString(),
+    expiresAt: new Date(expiresAtMs).toISOString(),
+  };
+
+  state.soundboxEvent = event;
+  soundboxEventClearTimeout = setTimeout(() => {
+    clearSoundboxEvent(true);
+  }, soundboxEventDurationSeconds * 1000);
+  broadcastState();
+  return event;
+}
+
 function getDisplayMode(): DisplayMode {
   if (state.fullscreenMessage) {
     return 'FULLSCREEN_MESSAGE';
@@ -446,6 +570,14 @@ function getState(): PublicState {
   const activeEventBanners = listActiveEventBanners();
   const activeLivelyMessages = listActiveLivelyMessages();
   const activeProgramItems = listActiveProgramItems();
+  const happyHourAnnouncement = state.happyHourAnnouncement
+    && Date.parse(state.happyHourAnnouncement.expiresAt) > Date.now()
+      ? state.happyHourAnnouncement
+      : null;
+  const soundboxEvent = state.soundboxEvent
+    && Date.parse(state.soundboxEvent.expiresAt) > Date.now()
+      ? state.soundboxEvent
+      : null;
   const matchInfo = {
     homeTeam: state.homeTeam,
     awayTeam: state.awayTeam,
@@ -465,6 +597,8 @@ function getState(): PublicState {
     happyHourEndsAt: state.happyHourActive
       ? new Date(Date.now() + Math.max(0, state.remainingSeconds) * 1000).toISOString()
       : null,
+    happyHourAnnouncement,
+    soundboxEvent,
     scoreLockActive,
     scoreLockRemainingSeconds,
     canUndoLastAction: scoreLockActive && lastScoreAction !== null,
@@ -507,8 +641,14 @@ function broadcastState(): void {
 }
 
 function startHappyHour(): void {
+  const wasActive = state.happyHourActive;
   state.happyHourActive = true;
   state.remainingSeconds = config.happyHourDurationSeconds;
+
+  if (!wasActive) {
+    triggerHappyHourAnnouncement();
+  }
+
   broadcastState();
 }
 
@@ -522,6 +662,7 @@ function resetHappyHour(): void {
 function stopHappyHour(): void {
   state.happyHourActive = false;
   state.remainingSeconds = 0;
+  clearHappyHourAnnouncement();
   broadcastState();
 }
 
@@ -588,6 +729,7 @@ async function selectMatch(matchId: string, mode: MatchMode, customAwayTeam = ''
   state.remainingSeconds = 0;
   state.preMatch.enabled = true;
   state.fullscreenMessage = '';
+  clearHappyHourAnnouncement();
   scoreLockUntil = 0;
   lastScoreAction = null;
   await persistCurrentMatchInfo();
@@ -611,6 +753,7 @@ async function applyApiMatchSelection(match: FranceMatchCandidate): Promise<Publ
   state.remainingSeconds = 0;
   state.preMatch.enabled = true;
   state.fullscreenMessage = '';
+  clearHappyHourAnnouncement();
   scoreLockUntil = 0;
   lastScoreAction = null;
   await persistCurrentMatchInfo();
@@ -659,6 +802,7 @@ function addHomeGoal(): PublicState {
   } else {
     state.happyHourActive = true;
     state.remainingSeconds = config.happyHourDurationSeconds;
+    triggerHappyHourAnnouncement();
   }
 
   lastScoreAction = {
@@ -757,6 +901,7 @@ async function finishMatch(): Promise<PublicState> {
   state.preMatch.enabled = false;
   state.happyHourActive = false;
   state.remainingSeconds = 0;
+  clearHappyHourAnnouncement();
   await updatePreMatchConfig({ enabled: false });
   broadcastState();
   return getState();
@@ -769,6 +914,7 @@ async function activatePreMatch(): Promise<PublicState> {
   state.happyHourActive = false;
   state.remainingSeconds = 0;
   state.fullscreenMessage = '';
+  clearHappyHourAnnouncement();
   await updatePreMatchConfig({ enabled: true });
   broadcastState();
   return getState();
@@ -892,6 +1038,7 @@ function undoLastScoreAction(): PublicState {
     if (lastScoreAction.triggeredHappyHour) {
       state.happyHourActive = false;
       state.remainingSeconds = 0;
+      clearHappyHourAnnouncement();
     }
   } else {
     state.awayScore = Math.max(0, lastScoreAction.previousScore.away);
@@ -1364,6 +1511,17 @@ app.post<{ Body: DisplayMessageBody }>('/api/display/fullscreen-message', async 
 
 app.post('/api/display/clear-message', async () => {
   return clearDisplayMessages();
+});
+
+app.post<{ Body: SoundboxPlayBody }>('/api/soundbox/play', async (request, reply) => {
+  if (!isSoundboxEventType(request.body?.type)) {
+    return reply.code(400).send({
+      error: 'Invalid soundbox type',
+      allowedTypes: Object.keys(soundboxEvents),
+    });
+  }
+
+  return createSoundboxEvent(request.body.type);
 });
 
 app.post('/api/override/start', async () => {
