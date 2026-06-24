@@ -77,6 +77,31 @@ export type EventBanner = {
   sortOrder: number;
 };
 
+export type HappyHourAnnouncement = {
+  id: string;
+  active: boolean;
+  title: string;
+  message: string;
+  offerName: string;
+  originalPrice: number;
+  happyHourPrice: number;
+  currency: 'EUR';
+  startedAt: string;
+  expiresAt: string;
+  durationSeconds: number;
+};
+
+export type SoundboxEventType = 'horn' | 'whistle' | 'cheer' | 'goal';
+
+export type SoundboxEvent = {
+  id: string;
+  type: SoundboxEventType;
+  label: string;
+  asset?: string;
+  startedAt: string;
+  expiresAt: string;
+};
+
 export type PreMatchState = {
   enabled: boolean;
   kickoffAt: string;
@@ -93,6 +118,8 @@ export type DisplayStateV2 = {
   happyHourDurationSeconds: number;
   remainingSeconds: number;
   happyHourEndsAt: string | null;
+  happyHourAnnouncement: HappyHourAnnouncement | null;
+  soundboxEvent: SoundboxEvent | null;
   preMatch: PreMatchState;
   matchInfo: DisplayMatchInfo;
   bannerMessage: string;

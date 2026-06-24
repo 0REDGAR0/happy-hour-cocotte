@@ -4,55 +4,21 @@
     {
       "id": "pinte-blonde",
       "name": "Pinte blonde",
-      "originalPrice": 7,
-      "price": 7,
-      "happyHourPrice": 5.6,
+      "originalPrice": 9,
+      "price": 9,
+      "happyHourPrice": 4,
       "icon": "🍺",
-      "currency": "EUR",
-      "active": true
-    },
-    {
-      "id": "pinte-ipa",
-      "name": "Pinte IPA",
-      "originalPrice": 8,
-      "price": 8,
-      "happyHourPrice": 6.4,
-      "icon": "🍻",
-      "currency": "EUR",
-      "active": true
-    },
-    {
-      "id": "soft",
-      "name": "Soft",
-      "originalPrice": 3.5,
-      "price": 3.5,
-      "happyHourPrice": 2.8,
-      "icon": "🥤",
       "currency": "EUR",
       "active": true
     }
   ],
   "programItems": [
     {
-      "id": "service-bar",
-      "icon": "🍻",
-      "text": "Happy hour = Service au bar",
-      "active": true,
-      "sortOrder": 1
-    },
-    {
       "id": "happy-hour-buts",
       "icon": "⚽",
       "text": "But France = Happy hour 5mn",
       "active": true,
-      "sortOrder": 2
-    },
-    {
-      "id": "offres-tv",
-      "icon": "📺",
-      "text": "Offres sur la télé et ecrans dans le restau",
-      "active": true,
-      "sortOrder": 3
+      "sortOrder": 1
     }
   ],
   "eventBanners": [
@@ -90,13 +56,13 @@
     }
   ],
   "preMatch": {
-    "enabled": false,
-    "kickoffAt": "2026-06-22T23:00:00+02:00",
+    "enabled": true,
+    "kickoffAt": "2026-06-25T21:00:00+02:00",
     "homeFlag": "🇫🇷",
     "awayFlag": "🇯🇵"
   },
   "match": {
-    "selectedMatchId": "france-custom-iraq",
+    "selectedMatchId": "france-custom-norvège",
     "matchStarted": true,
     "matchMode": "simulation",
     "scoreSource": "simulation",
@@ -107,8 +73,8 @@
       "shortName": "FRA"
     },
     "awayTeam": {
-      "name": "IRAQ",
-      "shortName": "IRA"
+      "name": "NORVÈGE",
+      "shortName": "NOR"
     },
     "homeScore": 0,
     "awayScore": 0

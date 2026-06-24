@@ -37,6 +37,32 @@ const apiFootballProvider = new ApiFootballProvider();
 const spotifyService = new SpotifyService(config.spotifyRedirectUri);
 let cachedFranceApiMatches = [];
 const happyHourDiscountRate = 0.2;
+const happyHourOffer = {
+    name: 'Pinte de bière',
+    originalPrice: 9,
+    happyHourPrice: 4,
+    currency: 'EUR',
+};
+const happyHourAnnouncementDurationSeconds = 5;
+const soundboxEventDurationSeconds = 5;
+const soundboxEvents = {
+    horn: {
+        label: 'Klaxon',
+        asset: 'horn',
+    },
+    whistle: {
+        label: 'Sifflet',
+        asset: 'whistle',
+    },
+    cheer: {
+        label: 'Ambiance',
+        asset: 'cheer',
+    },
+    goal: {
+        label: 'Goal',
+        asset: 'goal',
+    },
+};
 await initializePersistentContent();
 const spotifyPlaceholder = {
     status: spotifyService.isConfigured() ? 'no_playback' : 'not_configured',
@@ -51,8 +77,8 @@ const spotifyPlaceholder = {
 let spotifyState = spotifyPlaceholder;
 const defaultPreMatchProgramMessages = [
     'Service au bar pendant tout le match',
-    '5 minutes de Happy Hour Ã  chaque but de la France',
-    'Les offres sâ€™affichent automatiquement sur la TV',
+    '5 minutes de Happy Hour à chaque but de la France',
+    'La pinte de bière est à 4€ au lieu de 9€',
 ];
 const persistedPreMatch = getPreMatchConfig();
 const persistedMatch = getPersistedMatchInfo();
@@ -63,6 +89,8 @@ const state = {
     happyHourDurationSeconds: config.happyHourDurationSeconds,
     remainingSeconds: 0,
     happyHourEndsAt: null,
+    happyHourAnnouncement: null,
+    soundboxEvent: null,
     scoreLockActive: false,
     scoreLockRemainingSeconds: 0,
     canUndoLastAction: false,
@@ -122,6 +150,9 @@ const eventBannerDisplayDurationMs = 15000;
 let scoreLockUntil = 0;
 let lastScoreAction = null;
 let eventBannerClearTimeout = null;
+let happyHourAnnouncementClearTimeout = null;
+let soundboxEventClearTimeout = null;
+let soundboxEventSequence = 0;
 function getLocalNetworkUrls(port = config.appPort) {
     const urls = [];
     for (const interfaces of Object.values(networkInterfaces())) {
@@ -238,6 +269,75 @@ async function persistCurrentMatchInfo() {
         awayScore: state.awayScore,
     });
 }
+function clearHappyHourAnnouncement(shouldBroadcast = false) {
+    if (happyHourAnnouncementClearTimeout) {
+        clearTimeout(happyHourAnnouncementClearTimeout);
+        happyHourAnnouncementClearTimeout = null;
+    }
+    state.happyHourAnnouncement = null;
+    if (shouldBroadcast) {
+        broadcastState();
+    }
+}
+function triggerHappyHourAnnouncement() {
+    const startedAtMs = Date.now();
+    const expiresAtMs = startedAtMs + happyHourAnnouncementDurationSeconds * 1000;
+    if (happyHourAnnouncementClearTimeout) {
+        clearTimeout(happyHourAnnouncementClearTimeout);
+    }
+    state.happyHourAnnouncement = {
+        id: `happy-hour-${startedAtMs}`,
+        active: true,
+        title: 'HAPPY HOUR',
+        message: 'La pinte est à 4€ au lieu de 9€',
+        offerName: happyHourOffer.name,
+        originalPrice: happyHourOffer.originalPrice,
+        happyHourPrice: happyHourOffer.happyHourPrice,
+        currency: happyHourOffer.currency,
+        startedAt: new Date(startedAtMs).toISOString(),
+        expiresAt: new Date(expiresAtMs).toISOString(),
+        durationSeconds: happyHourAnnouncementDurationSeconds,
+    };
+    happyHourAnnouncementClearTimeout = setTimeout(() => {
+        clearHappyHourAnnouncement(true);
+    }, happyHourAnnouncementDurationSeconds * 1000);
+}
+function clearSoundboxEvent(shouldBroadcast = false) {
+    if (soundboxEventClearTimeout) {
+        clearTimeout(soundboxEventClearTimeout);
+        soundboxEventClearTimeout = null;
+    }
+    state.soundboxEvent = null;
+    if (shouldBroadcast) {
+        broadcastState();
+    }
+}
+function isSoundboxEventType(value) {
+    return typeof value === 'string' && Object.hasOwn(soundboxEvents, value);
+}
+function createSoundboxEvent(type) {
+    const soundboxConfig = soundboxEvents[type];
+    const startedAtMs = Date.now();
+    const expiresAtMs = startedAtMs + soundboxEventDurationSeconds * 1000;
+    soundboxEventSequence += 1;
+    if (soundboxEventClearTimeout) {
+        clearTimeout(soundboxEventClearTimeout);
+    }
+    const event = {
+        id: `soundbox-${startedAtMs}-${soundboxEventSequence}`,
+        type,
+        label: soundboxConfig.label,
+        asset: soundboxConfig.asset,
+        startedAt: new Date(startedAtMs).toISOString(),
+        expiresAt: new Date(expiresAtMs).toISOString(),
+    };
+    state.soundboxEvent = event;
+    soundboxEventClearTimeout = setTimeout(() => {
+        clearSoundboxEvent(true);
+    }, soundboxEventDurationSeconds * 1000);
+    broadcastState();
+    return event;
+}
 function getDisplayMode() {
     if (state.fullscreenMessage) {
         return 'FULLSCREEN_MESSAGE';
@@ -268,6 +368,14 @@ function getState() {
     const activeEventBanners = listActiveEventBanners();
     const activeLivelyMessages = listActiveLivelyMessages();
     const activeProgramItems = listActiveProgramItems();
+    const happyHourAnnouncement = state.happyHourAnnouncement
+        && Date.parse(state.happyHourAnnouncement.expiresAt) > Date.now()
+        ? state.happyHourAnnouncement
+        : null;
+    const soundboxEvent = state.soundboxEvent
+        && Date.parse(state.soundboxEvent.expiresAt) > Date.now()
+        ? state.soundboxEvent
+        : null;
     const matchInfo = {
         homeTeam: state.homeTeam,
         awayTeam: state.awayTeam,
@@ -286,6 +394,8 @@ function getState() {
         happyHourEndsAt: state.happyHourActive
             ? new Date(Date.now() + Math.max(0, state.remainingSeconds) * 1000).toISOString()
             : null,
+        happyHourAnnouncement,
+        soundboxEvent,
         scoreLockActive,
         scoreLockRemainingSeconds,
         canUndoLastAction: scoreLockActive && lastScoreAction !== null,
@@ -325,8 +435,12 @@ function broadcastState() {
     }
 }
 function startHappyHour() {
+    const wasActive = state.happyHourActive;
     state.happyHourActive = true;
     state.remainingSeconds = config.happyHourDurationSeconds;
+    if (!wasActive) {
+        triggerHappyHourAnnouncement();
+    }
     broadcastState();
 }
 function resetHappyHour() {
@@ -338,6 +452,7 @@ function resetHappyHour() {
 function stopHappyHour() {
     state.happyHourActive = false;
     state.remainingSeconds = 0;
+    clearHappyHourAnnouncement();
     broadcastState();
 }
 function cleanOpponentName(value) {
@@ -394,6 +509,7 @@ async function selectMatch(matchId, mode, customAwayTeam = '', customAwayShortNa
     state.remainingSeconds = 0;
     state.preMatch.enabled = true;
     state.fullscreenMessage = '';
+    clearHappyHourAnnouncement();
     scoreLockUntil = 0;
     lastScoreAction = null;
     await persistCurrentMatchInfo();
@@ -416,6 +532,7 @@ async function applyApiMatchSelection(match) {
     state.remainingSeconds = 0;
     state.preMatch.enabled = true;
     state.fullscreenMessage = '';
+    clearHappyHourAnnouncement();
     scoreLockUntil = 0;
     lastScoreAction = null;
     await persistCurrentMatchInfo();
@@ -456,6 +573,7 @@ function addHomeGoal() {
     else {
         state.happyHourActive = true;
         state.remainingSeconds = config.happyHourDurationSeconds;
+        triggerHappyHourAnnouncement();
     }
     lastScoreAction = {
         type: 'home-goal',
@@ -545,6 +663,7 @@ async function finishMatch() {
     state.preMatch.enabled = false;
     state.happyHourActive = false;
     state.remainingSeconds = 0;
+    clearHappyHourAnnouncement();
     await updatePreMatchConfig({ enabled: false });
     broadcastState();
     return getState();
@@ -556,6 +675,7 @@ async function activatePreMatch() {
     state.happyHourActive = false;
     state.remainingSeconds = 0;
     state.fullscreenMessage = '';
+    clearHappyHourAnnouncement();
     await updatePreMatchConfig({ enabled: true });
     broadcastState();
     return getState();
@@ -659,6 +779,7 @@ function undoLastScoreAction() {
         if (lastScoreAction.triggeredHappyHour) {
             state.happyHourActive = false;
             state.remainingSeconds = 0;
+            clearHappyHourAnnouncement();
         }
     }
     else {
@@ -1082,6 +1203,15 @@ app.post('/api/display/fullscreen-message', async (request, reply) => {
 });
 app.post('/api/display/clear-message', async () => {
     return clearDisplayMessages();
+});
+app.post('/api/soundbox/play', async (request, reply) => {
+    if (!isSoundboxEventType(request.body?.type)) {
+        return reply.code(400).send({
+            error: 'Invalid soundbox type',
+            allowedTypes: Object.keys(soundboxEvents),
+        });
+    }
+    return createSoundboxEvent(request.body.type);
 });
 app.post('/api/override/start', async () => {
     startHappyHour();
