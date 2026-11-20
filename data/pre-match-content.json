@@ -56,13 +56,13 @@
     }
   ],
   "preMatch": {
-    "enabled": true,
+    "enabled": false,
     "kickoffAt": "2026-06-25T21:00:00+02:00",
     "homeFlag": "🇫🇷",
     "awayFlag": "🇯🇵"
   },
   "match": {
-    "selectedMatchId": "france-custom-norvège",
+    "selectedMatchId": "france-custom-espagne",
     "matchStarted": true,
     "matchMode": "simulation",
     "scoreSource": "simulation",
@@ -73,8 +73,8 @@
       "shortName": "FRA"
     },
     "awayTeam": {
-      "name": "NORVÈGE",
-      "shortName": "NOR"
+      "name": "ESPAGNE",
+      "shortName": "ESP"
     },
     "homeScore": 0,
     "awayScore": 0
