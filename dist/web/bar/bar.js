@@ -14,6 +14,7 @@ const emptyState = {
     matchStatus: 'NOT_STARTED',
     bannerMessage: '',
     fullscreenMessage: '',
+    happyHourAnnouncement: null,
     preMatch: {
         enabled: true,
         kickoffAt: '',
@@ -127,6 +128,8 @@ const livelyEditor = element('#lively-editor');
 const addLivelyMessageButton = element('#add-lively-message-button');
 const saveLivelyMessagesButton = element('#save-lively-messages-button');
 const livelyStatus = element('#lively-status');
+const soundboxGrid = element('#soundbox-grid');
+const soundboxStatus = element('#soundbox-status');
 const audioAlertsStorageKey = 'cocotte.bar.audioAlertsEnabled';
 let audioAlertsEnabled = localStorage.getItem(audioAlertsStorageKey) === 'true';
 let audioContext = null;
@@ -140,6 +143,20 @@ let editableProgramItems = [];
 let editableEventBanners = [];
 let editableLivelyMessages = [];
 let lastSuccessfulStateAt = 0;
+const soundboxActions = {
+    horn: {
+        label: 'Klaxon',
+    },
+    whistle: {
+        label: 'Sifflet',
+    },
+    cheer: {
+        label: 'Ambiance',
+    },
+    goal: {
+        label: 'Goal',
+    },
+};
 const sectionTitles = {
     overview: 'Vue générale',
     'pre-match': 'Diffusion & contenus',
@@ -210,6 +227,10 @@ function setEventBannerStatus(message = '', kind = 'neutral') {
 function setLivelyStatus(message = '', kind = 'neutral') {
     livelyStatus.textContent = message;
     livelyStatus.dataset.kind = kind;
+}
+function setSoundboxStatus(message = '', kind = 'neutral') {
+    soundboxStatus.textContent = message;
+    soundboxStatus.dataset.kind = kind;
 }
 function setConnectionStatus(kind = 'unstable') {
     const labels = {
@@ -382,6 +403,32 @@ async function triggerHappyHourAlert() {
     }
     showAudioAlertAnimation();
     await playHappyHourSound();
+}
+async function sendSoundboxEvent(soundboxType = '') {
+    const soundboxAction = soundboxActions[soundboxType];
+    if (!soundboxAction) {
+        setSoundboxStatus('Son inconnu, action ignoree.', 'error');
+        return;
+    }
+    setSoundboxStatus(`Envoi ${soundboxAction.label} vers overlay...`);
+    let response;
+    try {
+        response = await fetch('/api/soundbox/play', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: soundboxType }),
+        });
+    }
+    catch {
+        setSoundboxStatus('Soundbox impossible : connexion serveur perdue', 'error');
+        return;
+    }
+    const payload = await readResponseJson(response);
+    if (!response.ok) {
+        setSoundboxStatus(payload.error ? `Soundbox refusee : ${payload.error}` : `Soundbox refusee : ${response.status}`, 'error');
+        return;
+    }
+    setSoundboxStatus(`${payload.label || soundboxAction.label} envoye vers overlay.`, 'success');
 }
 async function enableAudioAlerts() {
     audioAlertsEnabled = true;
@@ -1393,6 +1440,13 @@ livelyEditor.addEventListener('click', (event) => {
     }
     const row = button.closest('.lively-editor-row');
     void deleteEditableLivelyMessage(Number(row?.dataset.index ?? -1));
+});
+soundboxGrid.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-soundbox-type]');
+    if (!button) {
+        return;
+    }
+    void sendSoundboxEvent(button.dataset.soundboxType);
 });
 for (const item of navItems) {
     item.addEventListener('click', () => {

@@ -41,6 +41,8 @@ Exemple de reponse simplifiee :
   "happyHourDurationSeconds": 300,
   "remainingSeconds": 0,
   "happyHourEndsAt": null,
+  "happyHourAnnouncement": null,
+  "soundboxEvent": null,
   "preMatch": {
     "enabled": true,
     "kickoffAt": "2026-06-14T21:00:00+02:00",
@@ -106,11 +108,11 @@ Exemple de reponse simplifiee :
   ],
   "drinks": [
     {
-      "id": "pinte-blonde",
-      "name": "Pinte blonde",
-      "originalPrice": 7,
-      "price": 7,
-      "happyHourPrice": 5.6,
+      "id": "pinte-biere",
+      "name": "Pinte de bière",
+      "originalPrice": 9,
+      "price": 9,
+      "happyHourPrice": 4,
       "icon": "🍺",
       "currency": "EUR",
       "active": true
@@ -145,6 +147,68 @@ ISO 8601 UTC. Hors Happy Hour, `remainingSeconds` vaut `0` et
 
 `price` reste un alias compatible de `originalPrice`. Les nouveaux clients
 doivent lire `originalPrice`, `happyHourPrice`, `icon` et `active`.
+
+Depuis `back-v4`, l'offre cible est unique : `Pinte de bière`, prix normal
+`9`, prix Happy Hour `4`, devise `EUR`. Les nouvelles installations exposent
+une seule boisson active par defaut. Si un fichier persistant contient deja
+plusieurs boissons, le serveur ne les supprime pas automatiquement : les
+desactiver depuis l'admin pour garder uniquement l'offre principale.
+
+## Annonce Happy Hour temporaire
+
+Quand une Happy Hour demarre depuis `POST /api/override/start` ou depuis un but
+France (`POST /api/simulation/home-goal` en simulation), `/api/state` expose
+temporairement :
+
+```json
+{
+  "happyHourAnnouncement": {
+    "id": "happy-hour-1782320000000",
+    "active": true,
+    "title": "HAPPY HOUR",
+    "message": "La pinte est à 4€ au lieu de 9€",
+    "offerName": "Pinte de bière",
+    "originalPrice": 9,
+    "happyHourPrice": 4,
+    "currency": "EUR",
+    "startedAt": "2026-06-24T17:33:20.000Z",
+    "expiresAt": "2026-06-24T17:33:25.000Z",
+    "durationSeconds": 5
+  }
+}
+```
+
+Hors fenetre d'annonce, `happyHourAnnouncement` vaut `null`. L'overlay Android
+doit traiter `id` comme identifiant d'evenement et ne pas relancer l'annonce
+plein ecran si le meme `id` est revu via polling ou WebSocket. Les champs
+historiques `happyHourActive`, `remainingSeconds` et `happyHourEndsAt` restent
+la source du chrono Happy Hour.
+
+## Soundbox overlay
+
+Depuis `back-v4`, la soundbox de `/bar` agit comme telecommande pour l'overlay
+Android / TV. Elle ne joue pas le son final dans le navigateur admin : elle
+declenche un evenement serveur que l'overlay consomme depuis `/api/state`.
+
+Exemple temporaire :
+
+```json
+{
+  "soundboxEvent": {
+    "id": "soundbox-1782320000000-12",
+    "type": "horn",
+    "label": "Klaxon",
+    "asset": "horn",
+    "startedAt": "2026-06-24T17:33:20.000Z",
+    "expiresAt": "2026-06-24T17:33:25.000Z"
+  }
+}
+```
+
+Hors fenetre d'evenement, `soundboxEvent` vaut `null`. L'overlay doit
+dedoublonner par `id` : un meme `id` peut etre vu plusieurs fois via polling ou
+WebSocket, mais ne doit etre joue qu'une seule fois. Chaque clic admin cree un
+nouvel `id`; le back ne reutilise pas les anciens IDs.
 
 `preMatch.programMessages` reste expose pour compatibilite. La source principale
 est maintenant `preMatch.programItems`, triee par `sortOrder` et filtree sur
@@ -262,10 +326,23 @@ les phrases actives dans `livelyMessages`.
 
 - `POST /api/display/random-banner`
   - Choisit une banniere active et la diffuse immediatement dans `bannerMessage`.
-  - La diffusion actuelle est effacee automatiquement apres une duree courte cote serveur.
+  - La diffusion actuelle est effacee automatiquement apres environ 15 secondes cote serveur.
 
 Apres chaque modification, `/api/state` est rediffuse par WebSocket et expose
 les bannieres actives dans `eventBanners`.
+
+## Endpoint soundbox
+
+- `POST /api/soundbox/play`
+  - Body JSON : `{ "type": "horn" }`.
+  - Types autorises : `horn`, `whistle`, `cheer`, `goal`.
+  - Cree un `soundboxEvent` temporaire avec `id` unique, `type`, `label`,
+    `asset`, `startedAt` et `expiresAt`.
+  - Rediffuse `/api/state` par WebSocket.
+  - Refuse les types inconnus avec `400` et une erreur claire.
+
+Le son final est gere cote overlay Android / TV. Le back n'invente pas d'asset
+audio et ne lance pas de boucle sonore.
 
 ## Avant-match
 
@@ -320,6 +397,9 @@ Les endpoints existants restent disponibles :
 - `POST /api/pre-match/deactivate`
 - `POST /api/pre-match/configure`
 - `POST /api/display/random-banner`
+- `POST /api/display/fullscreen-message`
+- `POST /api/display/clear-message`
+- `POST /api/soundbox/play`
 - `GET /api/event-banners`
 - `POST /api/event-banners`
 - `PUT /api/event-banners/:id`
@@ -345,6 +425,10 @@ Pour l'overlay Android, lire en priorite :
 - `preMatch.programItems` pour le programme avec `text` et `icon`.
 - `spotify` pour le statut musique, le titre, l'artiste, la progression, la duree et l'appareil.
 - `happyHourActive`, `happyHourDurationSeconds`, `remainingSeconds` et `happyHourEndsAt` pour l'etat Happy Hour.
+- `happyHourAnnouncement` pour l'annonce plein ecran courte de demarrage Happy Hour, en dedoublonnant par `id`.
+- `soundboxEvent` pour les sons de regie, en dedoublonnant par `id`.
+- `bannerMessage` pour les bannieres aleatoires temporaires.
+- `fullscreenMessage` pour les messages plein ecran manuels de regie.
 
 Si un champ attendu est absent ou invalide, l'overlay doit afficher un etat
 visible d'erreur ou de chargement. Il ne doit pas inventer de match, de date, de

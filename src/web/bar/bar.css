@@ -299,7 +299,7 @@ h3 {
 .overview-stack {
   min-height: 100%;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: auto auto auto auto;
   gap: 12px;
 }
 
@@ -450,6 +450,43 @@ h3 {
 
 .actions {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.soundbox-card {
+  align-content: start;
+}
+
+.soundbox-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.soundbox-button {
+  min-height: 76px;
+  border: 1px solid rgba(247, 223, 180, 0.22);
+  border-radius: 8px;
+  padding: 12px;
+  background:
+    linear-gradient(180deg, rgba(255, 243, 215, 0.11), rgba(255, 243, 215, 0.04)),
+    rgba(18, 14, 10, 0.95);
+  color: var(--text);
+  font-size: clamp(16px, 1.5vw, 22px);
+  font-weight: 900;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.22);
+}
+
+.soundbox-button:hover {
+  border-color: var(--line-strong);
+  background:
+    linear-gradient(180deg, rgba(240, 120, 45, 0.22), rgba(240, 120, 45, 0.08)),
+    rgba(18, 14, 10, 0.95);
+}
+
+.soundbox-button:active {
+  transform: translateY(1px);
 }
 
 .message-form {
@@ -1048,6 +1085,7 @@ a.control-button {
   .score-control-actions,
   .match-control-actions,
   .actions,
+  .soundbox-grid,
   .message-form,
   .pre-match-form,
   .drink-editor-row,

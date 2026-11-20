@@ -93,11 +93,11 @@ const defaultContent: PersistentContent = {
   version: 1,
   drinks: [
     {
-      id: 'pinte-blonde',
-      name: 'Pinte blonde',
-      originalPrice: 7,
-      price: 7,
-      happyHourPrice: 5.6,
+      id: 'pinte-biere',
+      name: 'Pinte de bière',
+      originalPrice: 9,
+      price: 9,
+      happyHourPrice: 4,
       icon: '🍺',
       currency: 'EUR',
       active: true,
@@ -110,7 +110,7 @@ const defaultContent: PersistentContent = {
       happyHourPrice: 6.4,
       icon: '🍻',
       currency: 'EUR',
-      active: true,
+      active: false,
     },
     {
       id: 'verre-vin',
@@ -120,7 +120,7 @@ const defaultContent: PersistentContent = {
       happyHourPrice: 4,
       icon: '🍷',
       currency: 'EUR',
-      active: true,
+      active: false,
     },
     {
       id: 'cocktail-maison',
@@ -130,7 +130,7 @@ const defaultContent: PersistentContent = {
       happyHourPrice: 7.2,
       icon: '🍹',
       currency: 'EUR',
-      active: true,
+      active: false,
     },
     {
       id: 'soft',
@@ -140,7 +140,7 @@ const defaultContent: PersistentContent = {
       happyHourPrice: 2.8,
       icon: '🥤',
       currency: 'EUR',
-      active: true,
+      active: false,
     },
   ],
   programItems: [
@@ -154,14 +154,14 @@ const defaultContent: PersistentContent = {
     {
       id: 'happy-hour-buts',
       icon: '⚽',
-      text: '5 minutes de Happy Hour a chaque but de la France',
+      text: '5 minutes de Happy Hour à chaque but de la France',
       active: true,
       sortOrder: 20,
     },
     {
       id: 'offres-tv',
       icon: '📺',
-      text: "Les offres s'affichent automatiquement sur la TV",
+      text: 'La pinte de bière est à 4€ au lieu de 9€',
       active: true,
       sortOrder: 30,
     },
@@ -169,7 +169,7 @@ const defaultContent: PersistentContent = {
   eventBanners: [
     {
       id: 'happy-hour-bientot',
-      text: 'Gardez un oeil sur le score : Happy Hour a chaque but de la France.',
+      text: 'Gardez un oeil sur le score : la pinte passe à 4€ quand la France marque.',
       active: true,
       sortOrder: 10,
     },
@@ -189,7 +189,7 @@ const defaultContent: PersistentContent = {
     },
     {
       id: 'service-chaud',
-      text: 'Un but de la France et le bar passe en Happy Hour.',
+      text: 'Un but de la France et la pinte passe à 4€.',
       active: true,
       sortOrder: 20,
     },
